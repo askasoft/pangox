@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/askasoft/pango/iox"
-	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xin"
 )
 
 // RequestSizeLimiter http request limit middleware

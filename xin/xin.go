@@ -13,8 +13,8 @@ import (
 	"github.com/askasoft/pango/net/netx"
 	"github.com/askasoft/pango/ref"
 	"github.com/askasoft/pango/str"
-	"github.com/askasoft/pango/xin/render"
-	"github.com/askasoft/pango/xin/validate"
+	"github.com/askasoft/pangox/xin/render"
+	"github.com/askasoft/pangox/xin/validate"
 )
 
 const (

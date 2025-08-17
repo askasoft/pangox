@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/askasoft/pango/iox"
-	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xin"
 )
 
 func TestResponseCompressorProxiedFlag(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xin"
 )
 
 func ExampleHTTPDumper() {

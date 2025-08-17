@@ -1,7 +1,7 @@
 package xsm
 
 import (
-	"github.com/askasoft/pango/xvw/args"
+	"github.com/askasoft/pangox/xvw/args"
 )
 
 type SchemaInfo struct {

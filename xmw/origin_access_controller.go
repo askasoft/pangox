@@ -5,7 +5,7 @@ import (
 
 	"github.com/askasoft/pango/cog/hashset"
 	"github.com/askasoft/pango/num"
-	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xin"
 )
 
 // OriginAccessController Access-Control-Allow-Origin response header middleware

@@ -3,7 +3,7 @@ package xvw
 import (
 	"github.com/askasoft/pango/tbs"
 	"github.com/askasoft/pango/tpl"
-	"github.com/askasoft/pango/xvw/tags"
+	"github.com/askasoft/pangox/xvw/tags"
 )
 
 // Functions default utility functions for template

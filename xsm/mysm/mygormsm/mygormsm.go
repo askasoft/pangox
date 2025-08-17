@@ -5,8 +5,8 @@ import (
 
 	"github.com/askasoft/pango/asg"
 	"github.com/askasoft/pango/sqx"
-	"github.com/askasoft/pango/xsm"
-	"github.com/askasoft/pango/xsm/mysm"
+	"github.com/askasoft/pangox/xsm"
+	"github.com/askasoft/pangox/xsm/mysm"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

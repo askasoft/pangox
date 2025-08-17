@@ -7,7 +7,6 @@ import (
 	"io"
 
 	"github.com/askasoft/pango/log"
-	"github.com/askasoft/pango/log/internal"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -99,7 +98,7 @@ func (aw *AWSCloudWatchLogWriter) flush(eb *log.EventBuffer) error {
 			tooOldLogEventEndIndex = *res.RejectedLogEventsInfo.TooOldLogEventEndIndex
 		}
 
-		internal.Perrorf("awscloudwatchlog: Rejected: %d %d %d", expiredLogEventEndIndex, tooNewLogEventStartIndex, tooOldLogEventEndIndex)
+		log.Perrorf("awscloudwatchlog: Rejected: %d %d %d", expiredLogEventEndIndex, tooNewLogEventStartIndex, tooOldLogEventEndIndex)
 	}
 
 	return nil

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xin"
 )
 
 func TestRequestSizeLimiter(t *testing.T) {

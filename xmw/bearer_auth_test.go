@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/askasoft/pango/test/assert"
-	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xin"
 )
 
 func testBearerAuthHeader(token string) string {

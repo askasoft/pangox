@@ -13,7 +13,7 @@ import (
 	"github.com/askasoft/pango/cpt"
 	"github.com/askasoft/pango/net/httpx"
 	"github.com/askasoft/pango/str"
-	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xin"
 )
 
 const (

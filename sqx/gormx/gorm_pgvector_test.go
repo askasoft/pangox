@@ -1,4 +1,4 @@
-package gormtest
+package gormx
 
 import (
 	"database/sql"

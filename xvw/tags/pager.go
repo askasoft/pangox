@@ -8,7 +8,7 @@ import (
 	"github.com/askasoft/pango/num"
 	"github.com/askasoft/pango/str"
 	"github.com/askasoft/pango/tbs"
-	"github.com/askasoft/pango/xvw/args"
+	"github.com/askasoft/pangox/xvw/args"
 )
 
 type Pager = args.Pager

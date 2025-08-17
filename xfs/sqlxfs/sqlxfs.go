@@ -10,7 +10,7 @@ import (
 	"github.com/askasoft/pango/sqx"
 	"github.com/askasoft/pango/sqx/sqlx"
 	"github.com/askasoft/pango/str"
-	"github.com/askasoft/pango/xfs"
+	"github.com/askasoft/pangox/xfs"
 )
 
 // sfs implements xfs.XFS interface

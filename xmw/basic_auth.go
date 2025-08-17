@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/askasoft/pango/str"
-	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xin"
 )
 
 const (

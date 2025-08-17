@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/askasoft/pango/log"
-	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xin"
 )
 
 const (

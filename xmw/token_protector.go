@@ -6,7 +6,7 @@ import (
 
 	"github.com/askasoft/pango/cpt"
 	"github.com/askasoft/pango/cpt/ccpt"
-	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xin"
 )
 
 const (

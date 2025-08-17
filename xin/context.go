@@ -15,8 +15,8 @@ import (
 	"github.com/askasoft/pango/net/httpx/sse"
 	"github.com/askasoft/pango/ref"
 	"github.com/askasoft/pango/str"
-	"github.com/askasoft/pango/xin/binding"
-	"github.com/askasoft/pango/xin/render"
+	"github.com/askasoft/pangox/xin/binding"
+	"github.com/askasoft/pangox/xin/render"
 )
 
 // Content-Type MIME of the most common data formats.

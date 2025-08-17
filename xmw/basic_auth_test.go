@@ -8,7 +8,7 @@ import (
 
 	"github.com/askasoft/pango/str"
 	"github.com/askasoft/pango/test/assert"
-	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xin"
 )
 
 func testBasicAuthHeader(user, password string) string {

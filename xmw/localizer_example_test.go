@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xin"
 )
 
 func ExampleLocalizer() {

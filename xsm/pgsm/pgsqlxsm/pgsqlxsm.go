@@ -6,8 +6,8 @@ import (
 	"github.com/askasoft/pango/sqx"
 	"github.com/askasoft/pango/sqx/sqlx"
 	"github.com/askasoft/pango/str"
-	"github.com/askasoft/pango/xsm"
-	"github.com/askasoft/pango/xsm/pgsm"
+	"github.com/askasoft/pangox/xsm"
+	"github.com/askasoft/pangox/xsm/pgsm"
 )
 
 type ssm struct {

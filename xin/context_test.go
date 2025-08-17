@@ -20,7 +20,7 @@ import (
 
 	"github.com/askasoft/pango/net/httpx/sse"
 	"github.com/askasoft/pango/test/assert"
-	"github.com/askasoft/pango/xin/binding"
+	"github.com/askasoft/pangox/xin/binding"
 )
 
 // Unit tests TODO
@@ -342,7 +342,7 @@ func TestContextHandlerName(t *testing.T) {
 	c, _ := CreateTestContext(httptest.NewRecorder())
 	c.handlers = HandlersChain{func(c *Context) {}, handlerNameTest}
 
-	assert.Regexp(t, "^(.*/vendor/)?github.com/askasoft/pango/xin.handlerNameTest$", c.HandlerName())
+	assert.Regexp(t, "^(.*/vendor/)?github.com/askasoft/pangox/xin.handlerNameTest$", c.HandlerName())
 }
 
 func TestContextHandlerNames(t *testing.T) {
@@ -353,7 +353,7 @@ func TestContextHandlerNames(t *testing.T) {
 
 	assert.True(t, len(names) == 4)
 	for _, name := range names {
-		assert.Regexp(t, `^(.*/vendor/)?(github\.com/askasoft/pango/xin\.){1}(TestContextHandlerNames\.func.*){0,1}(handlerNameTest.*){0,1}`, name)
+		assert.Regexp(t, `^(.*/vendor/)?(github\.com/askasoft/pangox/xin\.){1}(TestContextHandlerNames\.func.*){0,1}(handlerNameTest.*){0,1}`, name)
 	}
 }
 

@@ -14,7 +14,7 @@
 package main
 
 import (
-	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xin"
 )
 
 func main() {
@@ -45,5 +45,5 @@ $ curl -i http://localhost:8201/hello/world
 ## Environment
 
 - go version:
-- xin version (or commit ref):
+- pangox version (or commit ref):
 - operating system:

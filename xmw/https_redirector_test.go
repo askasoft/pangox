@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xin"
 )
 
 func newHTTPSRedirectorServer(sh *HTTPSRedirector) *xin.Engine {

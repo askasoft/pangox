@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/askasoft/pango/str"
-	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xin"
 )
 
 // http://nginx.org/en/docs/http/ngx_http_gzip_module.html

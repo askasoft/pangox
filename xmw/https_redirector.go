@@ -3,7 +3,7 @@ package xmw
 import (
 	"net/http"
 
-	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xin"
 )
 
 // HTTPSRedirector is a middleware that helps setup a https redirect features.

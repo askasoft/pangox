@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/askasoft/pango/sqx/sqlx"
-	"github.com/askasoft/pango/xjm"
+	"github.com/askasoft/pangox/xjm"
 )
 
 type sjm struct {

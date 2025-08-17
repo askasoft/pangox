@@ -1,7 +1,7 @@
 package xmw
 
 import (
-	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xin"
 )
 
 const (

@@ -1,7 +1,7 @@
 package xin
 
 import (
-	"github.com/askasoft/pango/xin/binding"
+	"github.com/askasoft/pangox/xin/binding"
 )
 
 // EnableJSONDecoderUseNumber sets true for binding.EnableDecoderUseNumber to

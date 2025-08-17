@@ -7,7 +7,7 @@ import (
 
 	"github.com/askasoft/pango/imc"
 	"github.com/askasoft/pango/net/netx"
-	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xin"
 )
 
 // RequestRateLimiter http request limit middleware

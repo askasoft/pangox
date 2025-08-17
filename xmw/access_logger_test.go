@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/askasoft/pango/str"
-	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xin"
 )
 
 func logPerformRequest(r http.Handler, method, path string) *httptest.ResponseRecorder {

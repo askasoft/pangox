@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/askasoft/pango/xjm"
+	"github.com/askasoft/pangox/xjm"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

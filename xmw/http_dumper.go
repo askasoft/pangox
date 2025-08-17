@@ -12,7 +12,7 @@ import (
 
 	"github.com/askasoft/pango/iox"
 	"github.com/askasoft/pango/log"
-	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xin"
 )
 
 // HTTPDumpKey is the key for dump http saved in context
