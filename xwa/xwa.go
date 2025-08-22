@@ -39,73 +39,49 @@ var (
 
 // inject by go build
 var (
-	// version app version
-	version string
+	// Version app version inject by go build
+	Version string
 
-	// revision app revision
-	revision string
+	// Revision app revision inject by go build
+	Revision string
 
-	// buildtime app build time
-	buildtime string
+	// Buildtime app build time "2006-01-02T15:04:05Z" inject by go build
+	Buildtime string
 )
 
 var (
-	// buildTime app build time
-	buildTime time.Time
+	// BuildTime app build time
+	BuildTime time.Time
 
-	// startupTime app start time
-	startupTime = time.Now()
+	// StartupTime app start time
+	StartupTime = time.Now()
 
-	// instanceID app instance ID
-	instanceID = npid.New(10, 0)
+	// InstanceID app instance ID
+	InstanceID = npid.New(10, 0)
 
-	// sequencer app snowflake ID generator
-	sequencer = snowflake.NewNode(instanceID)
+	// Sequencer app snowflake ID generator
+	Sequencer = snowflake.NewNode(InstanceID)
 )
 
 // init built-in variables on debug
 func init() {
-	if version == "" {
-		version = "0"
+	if Version == "" {
+		Version = "0.0.0"
 	}
 
-	if revision == "" {
-		revision = fmt.Sprintf("%x", startupTime.Unix())
+	if Revision == "" {
+		Revision = fmt.Sprintf("%x", StartupTime.Unix())
 	}
 
-	if buildtime == "" {
-		buildTime = startupTime
+	if Buildtime == "" {
+		BuildTime = StartupTime
 	} else {
-		buildTime, _ = time.ParseInLocation("2006-01-02T15:04:05Z", buildtime, time.UTC)
+		BuildTime, _ = time.ParseInLocation("2006-01-02T15:04:05Z", Buildtime, time.UTC)
 	}
-}
-
-func Version() string {
-	return version
-}
-
-func Revision() string {
-	return revision
 }
 
 func Versions() string {
-	return fmt.Sprintf("%s.%s (%s) [%s %s/%s]", version, revision, buildTime.Local(), runtime.Version(), runtime.GOOS, runtime.GOARCH)
-}
-
-func BuildTime() time.Time {
-	return buildTime
-}
-
-func StartupTime() time.Time {
-	return startupTime
-}
-
-func InstanceID() int64 {
-	return instanceID
-}
-
-func Sequencer() *snowflake.Node {
-	return sequencer
+	return fmt.Sprintf("%s.%s (%s) [%s %s/%s]", Version, Revision, BuildTime.Local(), runtime.Version(), runtime.GOOS, runtime.GOARCH)
 }
 
 func Exit(code int) {
@@ -118,18 +94,18 @@ func InitLogs() error {
 		return err
 	}
 
-	log.SetProp("VERSION", Version())
-	log.SetProp("REVISION", Revision())
+	log.SetProp("VERSION", Version)
+	log.SetProp("REVISION", Revision)
 	golog.SetOutput(log.GetOutputer("std", log.LevelInfo, 2))
 
 	dir, _ := filepath.Abs(".")
 	log.Info("Initializing ...")
-	log.Infof("Version:    %s.%s", Version(), Revision())
-	log.Infof("BuildTime:  %s", BuildTime().Local())
 	log.Infof("Runtime:    %s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH)
+	log.Infof("Version:    %s.%s", Version, Revision)
+	log.Infof("BuildTime:  %s", BuildTime.Local())
 	log.Infof("Directory:  %s", dir)
 	log.Infof("ProcessID:  %d", os.Getpid())
-	log.Infof("InstanceID: 0x%x", InstanceID())
+	log.Infof("InstanceID: 0x%x", InstanceID)
 
 	return nil
 }
@@ -177,7 +153,7 @@ func LoadConfigs() (*ini.Ini, error) {
 }
 
 func MakeFileID(prefix, name string) string {
-	fid := "/" + prefix + time.Now().Format("/2006/0102/") + num.Ltoa(sequencer.NextID().Int64()) + "/"
+	fid := "/" + prefix + time.Now().Format("/2006/0102/") + num.Ltoa(Sequencer.NextID().Int64()) + "/"
 
 	_, name = filepath.Split(name)
 	name = str.RemoveAny(name, `\/:*?"<>|`)

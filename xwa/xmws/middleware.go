@@ -19,7 +19,11 @@ func ConfigResponseHeader(xrh *middleware.ResponseHeader) {
 	} else {
 		err := json.Unmarshal(str.UnsafeBytes(hh), &hm)
 		if err == nil {
-			sr := str.NewReplacer("{{VERSION}}", xwa.Version(), "{{REVISION}}", xwa.Revision(), "{{BuildTime}}", xwa.BuildTime().Format(time.RFC3339))
+			sr := str.NewReplacer(
+				"{{VERSION}}", xwa.Version,
+				"{{REVISION}}", xwa.Revision,
+				"{{BuildTime}}", xwa.BuildTime.Format(time.RFC3339),
+			)
 			for k, v := range hm {
 				hm[k] = sr.Replace(v)
 			}
