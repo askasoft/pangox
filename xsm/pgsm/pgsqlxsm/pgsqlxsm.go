@@ -18,6 +18,32 @@ func SM(db *sqlx.DB) xsm.SchemaManager {
 	return &ssm{db}
 }
 
+func (ssm *ssm) GetSchema(s string) (*xsm.SchemaInfo, error) {
+	if str.ContainsByte(s, '_') {
+		return nil, nil
+	}
+
+	sqb := ssm.db.Builder()
+	sqb.Select(
+		"nspname AS name",
+		"COALESCE((SELECT SUM(pg_relation_size(oid)) FROM pg_catalog.pg_class WHERE relnamespace = pg_namespace.oid), 0) AS size",
+		"COALESCE(obj_description(oid, 'pg_namespace'), '') AS comment",
+	)
+	sqb.From("pg_catalog.pg_namespace")
+	sqb.Eq("nspname", s)
+
+	sql, args := sqb.Build()
+
+	schema := &xsm.SchemaInfo{}
+	if err := ssm.db.Get(schema, sql, args...); err != nil {
+		if errors.Is(err, sqlx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return schema, nil
+}
+
 func (ssm *ssm) ExistsSchema(s string) (bool, error) {
 	if str.ContainsByte(s, '_') {
 		return false, nil
@@ -95,7 +121,6 @@ func (ssm *ssm) DeleteSchema(name string) error {
 }
 
 func (ssm *ssm) addQuery(sqb *sqlx.Builder, sq *xsm.SchemaQuery) {
-	sqb.From("pg_catalog.pg_namespace")
 	sqb.NotLike("nspname", sqx.StringLike("_"))
 	if sq.Name != "" {
 		sqb.ILike("nspname", sqx.StringLike(sq.Name))
@@ -105,6 +130,7 @@ func (ssm *ssm) addQuery(sqb *sqlx.Builder, sq *xsm.SchemaQuery) {
 func (ssm *ssm) CountSchemas(sq *xsm.SchemaQuery) (total int, err error) {
 	sqb := ssm.db.Builder()
 	sqb.Count()
+	sqb.From("pg_catalog.pg_namespace")
 	ssm.addQuery(sqb, sq)
 	sql, args := sqb.Build()
 
@@ -119,6 +145,7 @@ func (ssm *ssm) FindSchemas(sq *xsm.SchemaQuery) (schemas []*xsm.SchemaInfo, err
 		"COALESCE((SELECT SUM(pg_relation_size(oid)) FROM pg_catalog.pg_class WHERE relnamespace = pg_namespace.oid), 0) AS size",
 		"COALESCE(obj_description(oid, 'pg_namespace'), '') AS comment",
 	)
+	sqb.From("pg_catalog.pg_namespace")
 	ssm.addQuery(sqb, sq)
 
 	sqb.Order(sq.Col, sq.IsDesc())

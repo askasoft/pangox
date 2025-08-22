@@ -17,6 +17,7 @@ type SchemaQuery struct {
 }
 
 type SchemaManager interface {
+	GetSchema(s string) (*SchemaInfo, error)
 	ExistsSchema(s string) (bool, error)
 	ListSchemas() ([]string, error)
 	CreateSchema(name string, comment string) error

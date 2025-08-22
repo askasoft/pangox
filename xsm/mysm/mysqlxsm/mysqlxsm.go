@@ -3,7 +3,6 @@ package mysqlxsm
 import (
 	"errors"
 
-	"github.com/askasoft/pango/asg"
 	"github.com/askasoft/pango/sqx"
 	"github.com/askasoft/pango/sqx/sqlx"
 	"github.com/askasoft/pangox/xsm"
@@ -18,13 +17,41 @@ func SM(db *sqlx.DB) xsm.SchemaManager {
 	return &ssm{db}
 }
 
+func (ssm *ssm) GetSchema(s string) (*xsm.SchemaInfo, error) {
+	if mysm.IsSysDB(s) {
+		return nil, nil
+	}
+
+	sqb := ssm.db.Builder()
+	sqb.Select(
+		"schema_name AS name",
+		"(SELECT SUM(data_length + index_length) FROM information_schema.tables WHERE table_schema = schema_name) AS size",
+		"schema_comment AS comment",
+	)
+	sqb.From("information_schema.schemata")
+	sqb.Eq("schema_name", s)
+
+	sql, args := sqb.Build()
+
+	schema := &xsm.SchemaInfo{}
+	if err := ssm.db.Get(schema, sql, args...); err != nil {
+		if errors.Is(err, sqlx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return schema, nil
+}
+
 func (ssm *ssm) ExistsSchema(s string) (bool, error) {
-	if asg.Contains(mysm.SysDBs, s) {
+	if mysm.IsSysDB(s) {
 		return false, nil
 	}
 
 	sqb := ssm.db.Builder()
-	sqb.Select("schema_name").From("information_schema.schemata").Eq("schema_name", s)
+	sqb.Select("schema_name")
+	sqb.From("information_schema.schemata")
+	sqb.Eq("schema_name", s)
 	sql, args := sqb.Build()
 
 	var sn string
@@ -85,7 +112,7 @@ func (ssm *ssm) CommentSchema(name string, comment string) error {
 }
 
 func (ssm *ssm) RenameSchema(old string, new string) error {
-	return errors.New("unsupport")
+	return errors.New("mysql: rename schema is unsupported")
 }
 
 func (ssm *ssm) DeleteSchema(name string) error {
@@ -94,7 +121,6 @@ func (ssm *ssm) DeleteSchema(name string) error {
 }
 
 func (ssm *ssm) addQuery(sqb *sqlx.Builder, sq *xsm.SchemaQuery) {
-	sqb.From("information_schema.schemata")
 	sqb.NotIn("schema_name", mysm.SysDBs)
 	if sq.Name != "" {
 		sqb.Like("schema_name", sqx.StringLike(sq.Name))
@@ -104,6 +130,7 @@ func (ssm *ssm) addQuery(sqb *sqlx.Builder, sq *xsm.SchemaQuery) {
 func (ssm *ssm) CountSchemas(sq *xsm.SchemaQuery) (total int, err error) {
 	sqb := ssm.db.Builder()
 	sqb.Count()
+	sqb.From("information_schema.schemata")
 	ssm.addQuery(sqb, sq)
 	sql, args := sqb.Build()
 
@@ -118,6 +145,7 @@ func (ssm *ssm) FindSchemas(sq *xsm.SchemaQuery) (schemas []*xsm.SchemaInfo, err
 		"(SELECT SUM(data_length + index_length) FROM information_schema.tables WHERE table_schema = schema_name) AS size",
 		"schema_comment AS comment",
 	)
+	sqb.From("information_schema.schemata")
 	ssm.addQuery(sqb, sq)
 
 	sqb.Order(sq.Col, sq.IsDesc())
