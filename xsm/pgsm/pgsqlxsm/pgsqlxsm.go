@@ -26,7 +26,7 @@ func (ssm *ssm) GetSchema(s string) (*xsm.SchemaInfo, error) {
 	sqb := ssm.db.Builder()
 	sqb.Select(
 		"nspname AS name",
-		"COALESCE((SELECT SUM(pg_relation_size(oid)) FROM pg_catalog.pg_class WHERE relnamespace = pg_namespace.oid), 0) AS size",
+		"COALESCE((SELECT SUM(pg_total_relation_size(oid)) FROM pg_catalog.pg_class WHERE relnamespace = pg_namespace.oid AND relkind = 'r'), 0) AS size",
 		"COALESCE(obj_description(oid, 'pg_namespace'), '') AS comment",
 	)
 	sqb.From("pg_catalog.pg_namespace")
@@ -142,7 +142,7 @@ func (ssm *ssm) FindSchemas(sq *xsm.SchemaQuery) (schemas []*xsm.SchemaInfo, err
 	sqb := ssm.db.Builder()
 	sqb.Select(
 		"nspname AS name",
-		"COALESCE((SELECT SUM(pg_relation_size(oid)) FROM pg_catalog.pg_class WHERE relnamespace = pg_namespace.oid), 0) AS size",
+		"COALESCE((SELECT SUM(pg_total_relation_size(oid)) FROM pg_catalog.pg_class WHERE relnamespace = pg_namespace.oid AND relkind = 'r'), 0) AS size",
 		"COALESCE(obj_description(oid, 'pg_namespace'), '') AS comment",
 	)
 	sqb.From("pg_catalog.pg_namespace")
