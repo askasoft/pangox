@@ -13,13 +13,20 @@ import (
 )
 
 var (
-	HTMLTemplateExtensions = []string{".tpl", ".html", ".gohtml"}
-
-	XHT   render.HTMLTemplates // global xin html templates
-	Funcs tpl.FuncMap          // custom template functions
-	Root  string               // current external templates root path
-	FS    fs.FS                // internal embedded file system
+	XHT   tpl.Templates // global html templates
+	Funcs tpl.FuncMap   // custom template functions
+	Root  string        // current external templates root path
+	FS    fs.FS         // internal embedded file system
 )
+
+func HTMLRenderer(locale, name string, data any) render.Render {
+	return render.HTMLRender{
+		Templates: XHT,
+		Locale:    locale,
+		Name:      name,
+		Data:      data,
+	}
+}
 
 // Functions default utility functions for template
 func Functions() tpl.FuncMap {
@@ -29,8 +36,8 @@ func Functions() tpl.FuncMap {
 	return fm
 }
 
-func newHTMLTemplates() render.HTMLTemplates {
-	ht := render.NewHTMLTemplates()
+func newHTMLTemplates() tpl.Templates {
+	ht := tpl.NewHTMLTemplates()
 
 	fm := Functions()
 	ht.Funcs(fm)
@@ -96,7 +103,7 @@ func ReloadTemplates() bool {
 
 func ReloadTemplatesOnChange(path string, op string) bool {
 	ext := filepath.Ext(path)
-	if !asg.Contains(HTMLTemplateExtensions, ext) {
+	if !asg.Contains(tpl.HTMLTemplateExtensions, ext) {
 		log.Infof("Skip template reload, unsupported extension: '%s'", ext)
 		return false
 	}
