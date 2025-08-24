@@ -84,11 +84,6 @@ func Versions() string {
 	return fmt.Sprintf("%s.%s (%s) [%s %s/%s]", Version, Revision, BuildTime.Local(), runtime.Version(), runtime.GOOS, runtime.GOARCH)
 }
 
-func Exit(code int) {
-	log.Close()
-	os.Exit(code)
-}
-
 func InitLogs() error {
 	if err := log.Config(LogConfigFile); err != nil {
 		return err
