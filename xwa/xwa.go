@@ -33,6 +33,9 @@ var (
 	// Domain site domain
 	Domain string
 
+	// Secret secret string used for token protection
+	Secret string
+
 	// Locales supported languages
 	Locales []string
 )
@@ -125,6 +128,7 @@ func InitConfigs() error {
 	CFG = ini.StringMap()
 	Base = ini.GetString("server", "prefix")
 	Domain = ini.GetString("server", "domain")
+	Secret = ini.GetString("app", "secret", "~ pangoxsecret ~")
 	Locales = str.FieldsAny(ini.GetString("app", "locales"), ",; ")
 
 	return nil
