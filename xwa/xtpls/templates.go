@@ -15,8 +15,8 @@ import (
 var (
 	XHT   tpl.Templates // global html templates
 	Funcs tpl.FuncMap   // custom template functions
-	Root  string        // current external templates root path
-	FS    fs.FS         // internal embedded file system
+	Dir   string        // current local templates directory
+	FSs   []fs.FS       // internal embedded templates file systems
 )
 
 func HTMLRenderer(locale, name string, data any) render.Render {
@@ -46,54 +46,58 @@ func newHTMLTemplates() tpl.Templates {
 }
 
 func InitTemplates() error {
-	root := ini.GetString("app", "templates")
+	dir := ini.GetString("app", "templates")
 
 	ht := newHTMLTemplates()
-	if root != "" {
-		log.Infof("Loading templates from '%s'", root)
-		if err := ht.Load(root); err != nil {
+	if dir != "" {
+		log.Infof("Loading templates from '%s'", dir)
+		if err := ht.Load(dir); err != nil {
 			return err
 		}
-	} else if FS != nil {
+	} else if len(FSs) > 0 {
 		log.Info("Loading embedded templates")
-		if err := ht.LoadFS(FS, "."); err != nil {
-			return err
+		for _, fs := range FSs {
+			if err := ht.LoadFS(fs, "."); err != nil {
+				return err
+			}
 		}
 	}
 
 	XHT = ht
-	Root = root
+	Dir = dir
 	return nil
 }
 
 func ReloadTemplates() bool {
-	root := ini.GetString("app", "templates")
+	dir := ini.GetString("app", "templates")
 
-	if root != "" {
-		log.Infof("Reloading templates from '%s'", root)
+	if dir != "" {
+		log.Infof("Reloading templates from '%s'", dir)
 
 		ht := newHTMLTemplates()
-		if err := ht.Load(root); err != nil {
-			log.Errorf("Failed to reload templates from '%s': %v", root, err)
+		if err := ht.Load(dir); err != nil {
+			log.Errorf("Failed to reload templates from '%s': %v", dir, err)
 			return false
 		}
 
-		Root = root
+		Dir = dir
 		XHT = ht
 		return true
 	}
 
 	// internal embedded file system
-	if root != Root && FS != nil {
+	if dir != Dir && len(FSs) > 0 {
 		log.Info("Reloading embedded templates")
 
 		ht := newHTMLTemplates()
-		if err := ht.LoadFS(FS, "."); err != nil {
-			log.Errorf("Failed to reload embedded templates: %v", err)
-			return false
+		for _, fs := range FSs {
+			if err := ht.LoadFS(fs, "."); err != nil {
+				log.Errorf("Failed to reload embedded templates: %v", err)
+				return false
+			}
 		}
 
-		Root = root
+		Dir = dir
 		XHT = ht
 		return true
 	}
@@ -108,19 +112,19 @@ func ReloadTemplatesOnChange(path string, op string) bool {
 		return false
 	}
 
-	root := ini.GetString("app", "templates")
+	dir := ini.GetString("app", "templates")
 
-	if root == "" || root != Root {
-		log.Infof("Skip template reload, no root path set or path changed: '%s' != '%s'", root, Root)
+	if dir == "" || dir != Dir {
+		log.Infof("Skip template reload, no dir path set or path changed: '%s' != '%s'", dir, Dir)
 		return false
 	}
 
 	// reload on template file change
-	log.Infof("Reloading templates from '%s' on [%s] '%s'", root, op, path)
+	log.Infof("Reloading templates from '%s' on [%s] '%s'", dir, op, path)
 
 	ht := newHTMLTemplates()
-	if err := ht.Load(root); err != nil {
-		log.Errorf("Failed to reload templates from '%s': %v", root, err)
+	if err := ht.Load(dir); err != nil {
+		log.Errorf("Failed to reload templates from '%s': %v", dir, err)
 		return false
 	}
 
