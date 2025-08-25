@@ -65,18 +65,18 @@ var (
 
 // init built-in variables on debug
 func init() {
-	if Version == "" {
-		Version = "0.0.0"
-	}
-
-	if Revision == "" {
-		Revision = fmt.Sprintf("%x", StartupTime.Unix())
-	}
-
 	if Buildtime == "" {
 		BuildTime = StartupTime
 	} else {
 		BuildTime, _ = time.ParseInLocation("2006-01-02T15:04:05Z", Buildtime, time.UTC)
+	}
+
+	if Revision == "" {
+		Revision = fmt.Sprintf("%x", BuildTime.Unix())
+	}
+
+	if Version == "" {
+		Version = "0.0.0"
 	}
 }
 
