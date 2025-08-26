@@ -1,6 +1,7 @@
 package xtxts
 
 import (
+	"fmt"
 	"io/fs"
 	"path/filepath"
 
@@ -20,8 +21,13 @@ func InitMessages() error {
 
 	tb := tbs.NewTextBundles()
 	if dir != "" {
-		log.Infof("Loading messages from '%s'", dir)
-		if err := tb.Load(dir); err != nil {
+		absdir, err := filepath.Abs(dir)
+		if err != nil {
+			return fmt.Errorf("filepath.Abs('%s'): %w", dir, err)
+		}
+
+		log.Infof("Loading messages from '%s'", absdir)
+		if err := tb.Load(absdir); err != nil {
 			return err
 		}
 	} else if len(FSs) > 0 {
@@ -38,65 +44,78 @@ func InitMessages() error {
 	return nil
 }
 
-func ReloadMessages() bool {
+func ReloadMessages() error {
 	dir := ini.GetString("app", "messages")
 
 	if dir != "" {
-		log.Infof("Reloading messages from '%s'", dir)
+		absdir, err := filepath.Abs(dir)
+		if err != nil {
+			return err
+		}
+
+		log.Infof("Reloading messages from '%s'", absdir)
 
 		tb := tbs.NewTextBundles()
-		if err := tb.Load(dir); err != nil {
-			log.Errorf("Failed to reload messages from '%s': %v", dir, err)
-			return false
+		if err := tb.Load(absdir); err != nil {
+			return err
 		}
 
 		Dir = dir
 		tbs.SetDefault(tb)
-		return true
+		return nil
 	}
 
 	// internal embedded file system
+	// [dir != Dir] means switch from local to embedded
 	if dir != Dir && len(FSs) > 0 {
 		log.Info("Reloading embedded messages")
 
 		tb := tbs.NewTextBundles()
 		for _, fs := range FSs {
 			if err := tb.LoadFS(fs, "."); err != nil {
-				log.Errorf("Failed to reload embedded messages: %v", err)
-				return false
+				return err
 			}
 		}
 
 		Dir = dir
 		tbs.SetDefault(tb)
-		return true
+		return nil
 	}
 
-	return false
+	return nil
 }
 
-func ReloadMessagesOnChange(path string, op string) bool {
+func ReloadMessagesOnChange(path string, op string) error {
 	ext := filepath.Ext(path)
 	if !asg.Contains(tbs.Default().Extensions, ext) {
-		log.Infof("Skip message reload, unsupported extension: '%s'", ext)
-		return false
+		log.Warnf("Skip message reload, unsupported extension: '%s'", ext)
+		return nil
 	}
 
 	dir := ini.GetString("app", "messages")
-	if dir == "" || dir != Dir {
-		log.Infof("Skip message reload, no dir path set or path changed: '%s' != '%s'", dir, Dir)
-		return false
+	if dir == "" {
+		log.Warn("Skip message reload, empty '[app] messages' setting")
+		return nil
+	}
+
+	if dir != Dir {
+		log.Warnf("Skip message reload, '[app] messages' setting changed: '%s' != '%s'", dir, Dir)
+		return nil
+	}
+
+	absdir, err := filepath.Abs(dir)
+	if err != nil {
+		return err
 	}
 
 	// reload on message file change
-	log.Infof("Reloading messages from '%s' on [%s] '%s'", dir, op, path)
+	log.Infof("Reloading messages from '%s' on [%s] '%s'", absdir, op, path)
 
 	tb := tbs.NewTextBundles()
-	if err := tb.Load(dir); err != nil {
-		log.Errorf("Failed to reload messages from '%s': %v", dir, err)
-		return false
+	if err := tb.Load(absdir); err != nil {
+		return err
 	}
 
 	tbs.SetDefault(tb)
-	return true
+	return nil
 }

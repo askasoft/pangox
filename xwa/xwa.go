@@ -108,13 +108,14 @@ func InitLogs() error {
 	return nil
 }
 
-func ReloadLogs(op string) {
+func ReloadLogs(op string) error {
 	log.Infof("Reloading log '%s' [%s]", LogConfigFile, op)
 
-	err := log.Config(LogConfigFile)
-	if err != nil {
-		log.Errorf("Failed to reload log '%s': %v", LogConfigFile, err)
+	if err := log.Config(LogConfigFile); err != nil {
+		return fmt.Errorf("invalid log configuration '%s': %v", LogConfigFile, err)
 	}
+
+	return nil
 }
 
 func InitConfigs() error {

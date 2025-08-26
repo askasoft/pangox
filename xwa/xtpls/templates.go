@@ -1,6 +1,7 @@
 package xtpls
 
 import (
+	"fmt"
 	"io/fs"
 	"path/filepath"
 
@@ -50,8 +51,13 @@ func InitTemplates() error {
 
 	ht := newHTMLTemplates()
 	if dir != "" {
-		log.Infof("Loading templates from '%s'", dir)
-		if err := ht.Load(dir); err != nil {
+		absdir, err := filepath.Abs(dir)
+		if err != nil {
+			return fmt.Errorf("filepath.Abs('%s'): %w", dir, err)
+		}
+
+		log.Infof("Loading templates from '%s'", absdir)
+		if err := ht.Load(absdir); err != nil {
 			return err
 		}
 	} else if len(FSs) > 0 {
@@ -68,66 +74,79 @@ func InitTemplates() error {
 	return nil
 }
 
-func ReloadTemplates() bool {
+func ReloadTemplates() error {
 	dir := ini.GetString("app", "templates")
 
 	if dir != "" {
-		log.Infof("Reloading templates from '%s'", dir)
+		absdir, err := filepath.Abs(dir)
+		if err != nil {
+			return err
+		}
+
+		log.Infof("Reloading templates from '%s'", absdir)
 
 		ht := newHTMLTemplates()
-		if err := ht.Load(dir); err != nil {
-			log.Errorf("Failed to reload templates from '%s': %v", dir, err)
-			return false
+		if err := ht.Load(absdir); err != nil {
+			return err
 		}
 
 		Dir = dir
 		XHT = ht
-		return true
+		return nil
 	}
 
 	// internal embedded file system
+	// [dir != Dir] means switch from local to embedded
 	if dir != Dir && len(FSs) > 0 {
 		log.Info("Reloading embedded templates")
 
 		ht := newHTMLTemplates()
 		for _, fs := range FSs {
 			if err := ht.LoadFS(fs, "."); err != nil {
-				log.Errorf("Failed to reload embedded templates: %v", err)
-				return false
+				return err
 			}
 		}
 
 		Dir = dir
 		XHT = ht
-		return true
+		return nil
 	}
 
-	return false
+	return nil
 }
 
-func ReloadTemplatesOnChange(path string, op string) bool {
+func ReloadTemplatesOnChange(path string, op string) error {
 	ext := filepath.Ext(path)
 	if !asg.Contains(tpl.HTMLTemplateExtensions, ext) {
-		log.Infof("Skip template reload, unsupported extension: '%s'", ext)
-		return false
+		log.Warnf("Skip template reload, unsupported extension: '%s'", ext)
+		return nil
 	}
 
 	dir := ini.GetString("app", "templates")
 
-	if dir == "" || dir != Dir {
-		log.Infof("Skip template reload, no dir path set or path changed: '%s' != '%s'", dir, Dir)
-		return false
+	if dir == "" {
+		log.Warn("Skip template reload, empty '[app] templates' setting")
+		return nil
+	}
+
+	if dir != Dir {
+		log.Warnf("Skip template reload, '[app] templates' setting changed: '%s' != '%s'", dir, Dir)
+		return nil
+	}
+
+	absdir, err := filepath.Abs(dir)
+	if err != nil {
+		return err
 	}
 
 	// reload on template file change
-	log.Infof("Reloading templates from '%s' on [%s] '%s'", dir, op, path)
+	log.Infof("Reloading templates from '%s' on [%s] '%s'", absdir, op, path)
 
 	ht := newHTMLTemplates()
-	if err := ht.Load(dir); err != nil {
-		log.Errorf("Failed to reload templates from '%s': %v", dir, err)
-		return false
+	if err := ht.Load(absdir); err != nil {
+		return err
 	}
 
 	XHT = ht
-	return true
+	return nil
 }
