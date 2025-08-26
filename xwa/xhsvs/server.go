@@ -25,6 +25,7 @@ var (
 
 type GetCertificate func(*tls.ClientHelloInfo) (*tls.Certificate, error)
 
+// InitServers initialize TCP listeners and HTTP servers
 func InitServers(hh http.Handler, cert GetCertificate) error {
 	listen := ini.GetString("server", "listen", ":6060")
 
@@ -75,6 +76,7 @@ func InitServers(hh http.Handler, cert GetCertificate) error {
 	return nil
 }
 
+// ConfigServers config http servers
 func ConfigServers() {
 	for _, tcpd := range TCPs {
 		tcpd.Disable(!ini.GetBool("server", "tcpDump"))
@@ -88,6 +90,7 @@ func ConfigServers() {
 	}
 }
 
+// Serves start serve http servers in go-routines (non-blocking)
 func Serves() {
 	for i, hsv := range HSVs {
 		tcp := TCPs[i]
@@ -96,6 +99,7 @@ func Serves() {
 	}
 }
 
+// Shutdowns gracefully shutdown the http servers with timeout '[server] shutdownTimeout' (defautl 5 seconds).
 func Shutdowns() {
 	// shutdown http servers
 	var wg sync.WaitGroup
@@ -125,12 +129,15 @@ func serve(hsv *http.Server, tcp net.Listener) {
 func shutdown(hsv *http.Server, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	// The context is used to inform the server it has 5 seconds to finish
+	// The context is used to inform the server it has some seconds to finish
 	// the request it is currently handling
-	ctx, cancel := context.WithTimeout(context.TODO(), ini.GetDuration("server", "shutdownTimeout", 5*time.Second))
+	timeout := ini.GetDuration("server", "shutdownTimeout", 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), timeout)
 	defer cancel()
 
+	log.Infof("HTTP Server %s shutting down in %v ...", hsv.Addr, timeout)
+
 	if err := hsv.Shutdown(ctx); err != nil {
-		log.Errorf("Server %s failed to shutdown: %v", hsv.Addr, err)
+		log.Errorf("HTTP Server %s failed to shutdown: %v", hsv.Addr, err)
 	}
 }
