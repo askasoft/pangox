@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/askasoft/pango/asg"
 	"github.com/askasoft/pango/ini"
 	"github.com/askasoft/pango/log"
 	"github.com/askasoft/pango/net/netx"
@@ -26,7 +27,7 @@ var (
 type GetCertificate func(*tls.ClientHelloInfo) (*tls.Certificate, error)
 
 // InitServers initialize TCP listeners and HTTP servers
-func InitServers(hh http.Handler, cert GetCertificate) error {
+func InitServers(hh http.Handler, certs ...GetCertificate) error {
 	listen := ini.GetString("server", "listen", ":6060")
 
 	var semaphore chan struct{}
@@ -60,7 +61,8 @@ func InitServers(hh http.Handler, cert GetCertificate) error {
 		}
 
 		if ssl {
-			if cert == nil {
+			cert, ok := asg.FindFunc(certs, func(c GetCertificate) bool { return c != nil })
+			if !ok {
 				return errors.New("xhsvs: nil TLS certificate function")
 			}
 
