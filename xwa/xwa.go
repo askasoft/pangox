@@ -3,12 +3,14 @@ package xwa
 import (
 	"fmt"
 	golog "log"
+	"net"
 	"os"
 	"path/filepath"
 	"runtime"
 	"time"
 
 	"github.com/askasoft/pango/fsu"
+	"github.com/askasoft/pango/gog"
 	"github.com/askasoft/pango/ids/npid"
 	"github.com/askasoft/pango/ids/snowflake"
 	"github.com/askasoft/pango/ini"
@@ -96,14 +98,40 @@ func InitLogs() error {
 	log.SetProp("REVISION", Revision)
 	golog.SetOutput(log.GetOutputer("std", log.LevelInfo, 2))
 
-	dir, _ := filepath.Abs(".")
 	log.Info("Initializing ...")
-	log.Infof("Runtime:    %s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH)
-	log.Infof("Version:    %s.%s", Version, Revision)
-	log.Infof("BuildTime:  %s", BuildTime.Local())
-	log.Infof("Directory:  %s", dir)
-	log.Infof("ProcessID:  %d", os.Getpid())
-	log.Infof("InstanceID: 0x%x", InstanceID)
+	log.Infof("Runtime    : %s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH)
+	log.Infof("Version    : %s.%s", Version, Revision)
+	log.Infof("BuildTime  : %s", BuildTime.Local())
+
+	// network
+	ifaces, err := net.Interfaces()
+	if err == nil {
+		var ips []string
+		for _, i := range ifaces {
+			if i.Flags&net.FlagLoopback != 0 || i.Flags&net.FlagRunning == 0 {
+				continue
+			}
+
+			addrs, err := i.Addrs()
+			if err != nil {
+				continue
+			}
+
+			ips = ips[:0]
+			for _, addr := range addrs {
+				if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+					ips = append(ips, addr.String())
+				}
+			}
+			if len(ips) > 0 {
+				log.Infof("Network #%-2d: %s - %s", i.Index, i.Name, str.Join(ips, " "))
+			}
+		}
+	}
+
+	log.Infof("Directory  : %s", gog.First(os.Getwd()))
+	log.Infof("ProcessID  : %d", os.Getpid())
+	log.Infof("InstanceID : 0x%x", InstanceID)
 
 	return nil
 }
