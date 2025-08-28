@@ -17,8 +17,17 @@ import (
 )
 
 var (
+	// semaphore channel to limit connections
+	semaphore chan struct{}
+
+	// TLLs limited listeners
+	TLLs []*netx.LimitedListener
+
+	// TDLs dump listeners
+	TDLs []*netx.DumpListener
+
 	// TCPs TCP listeners
-	TCPs []*netx.DumpListener
+	TCPs []net.Listener
 
 	// HTTP http servers
 	HSVs []*http.Server
@@ -28,13 +37,7 @@ type GetCertificate func(*tls.ClientHelloInfo) (*tls.Certificate, error)
 
 // InitServers initialize TCP listeners and HTTP servers
 func InitServers(hh http.Handler, certs ...GetCertificate) error {
-	listen := ini.GetString("server", "listen", ":6060")
-
-	var semaphore chan struct{}
-	maxcon := ini.GetInt("server", "maxConnections")
-	if maxcon > 0 {
-		semaphore = make(chan struct{}, maxcon)
-	}
+	listen := ini.GetString("server", "listen")
 
 	for _, addr := range str.Fields(listen) {
 		log.Infof("Listening %s ...", addr)
@@ -49,11 +52,8 @@ func InitServers(hh http.Handler, certs ...GetCertificate) error {
 			return err
 		}
 
-		if maxcon > 0 {
-			tcp = netx.NewLimitListener(tcp, semaphore)
-		}
-
-		tcpd := netx.NewDumpListener(tcp, "logs")
+		tll := netx.NewLimitedListener(tcp, 0)
+		tdl := netx.NewDumpListener(tll, "logs")
 
 		hsv := &http.Server{
 			Addr:    addr,
@@ -70,7 +70,10 @@ func InitServers(hh http.Handler, certs ...GetCertificate) error {
 				GetCertificate: cert,
 			}
 		}
-		TCPs = append(TCPs, tcpd)
+
+		TCPs = append(TCPs, tcp)
+		TLLs = append(TLLs, tll)
+		TDLs = append(TDLs, tdl)
 		HSVs = append(HSVs, hsv)
 	}
 
@@ -80,8 +83,20 @@ func InitServers(hh http.Handler, certs ...GetCertificate) error {
 
 // ConfigServers config http servers
 func ConfigServers() {
-	for _, tcpd := range TCPs {
-		tcpd.Disable(!ini.GetBool("server", "tcpDump"))
+	maxcon := ini.GetInt("server", "maxConnections")
+	if maxcon < 0 {
+		maxcon = 0
+	}
+
+	if cap(semaphore) != maxcon {
+		semaphore = make(chan struct{}, maxcon)
+		for _, ttl := range TLLs {
+			ttl.Semaphore = semaphore
+		}
+	}
+
+	for _, tdl := range TDLs {
+		tdl.Disable(!ini.GetBool("server", "tcpDump"))
 	}
 
 	for _, hsv := range HSVs {
@@ -92,12 +107,19 @@ func ConfigServers() {
 	}
 }
 
+// ReloadServers reload server configurations
+func ReloadServers() error {
+	ConfigServers()
+	return nil
+}
+
 // Serves start serve http servers in go-routines (non-blocking)
 func Serves() {
 	for i, hsv := range HSVs {
-		tcp := TCPs[i]
-		go serve(hsv, tcp)
-		time.Sleep(time.Millisecond)
+		go serve(hsv, TDLs[i])
+
+		// sleep some time to keep log order
+		time.Sleep(10 * time.Millisecond)
 	}
 }
 
