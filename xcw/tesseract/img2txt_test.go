@@ -3,6 +3,7 @@ package tesseract
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -32,7 +33,7 @@ func testSkip(t *testing.T) {
 	}
 }
 
-func TestPdfFileTextifyString(t *testing.T) {
+func TestImgFileTextifyString(t *testing.T) {
 	testSkip(t)
 
 	cs := []string{"jpn.jpg"}
@@ -87,5 +88,20 @@ func TestImgReaderTextify(t *testing.T) {
 		} else {
 			os.Remove(fn + ".out")
 		}
+	}
+}
+
+func TestImgFileTextifyBad(t *testing.T) {
+	testSkip(t)
+
+	cs := []string{"bad.jpg"}
+
+	for i, c := range cs {
+		fn := testFilename(c)
+		txt, err := ImgFileTextifyString(context.Background(), fn, "jpn")
+		if err == nil {
+			t.Fatalf("Expected error for ImgFileTextifyString(%s), got nil", fn)
+		}
+		fmt.Printf("[%d] ImgFileTextifyString(%s): %q\n%v\n", i, fn, txt, err)
 	}
 }

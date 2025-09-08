@@ -3,8 +3,10 @@ package xpdf
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os/exec"
+	"strings"
 )
 
 // sudo apt install poppler-utils
@@ -50,10 +52,15 @@ func PdfFileTextifyString(ctx context.Context, name string, options ...string) (
 // PdfFileTextify Extract pdf file to writer
 // options: see "pdftotext -h"
 func PdfFileTextify(ctx context.Context, w io.Writer, name string, options ...string) error {
+	se := &strings.Builder{}
 	args := buildPdfToTextArgs(name, options...)
 	cmd := exec.CommandContext(ctx, "pdftotext", args...)
 	cmd.Stdout = w
-	return cmd.Run()
+	cmd.Stderr = se
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("xpdf: %q failed: %w - %s", cmd.String(), err, se.String())
+	}
+	return nil
 }
 
 // PdfBytesTextifyString Extract pdf data to string
@@ -81,11 +88,16 @@ func PdfReaderTextifyString(ctx context.Context, r io.Reader, options ...string)
 // PdfReaderTextify Extract pdf reader to writer
 // options: see "pdftotext -h"
 func PdfReaderTextify(ctx context.Context, w io.Writer, r io.Reader, options ...string) error {
+	se := &strings.Builder{}
 	args := buildPdfToTextArgs("-", options...)
 	cmd := exec.CommandContext(ctx, "pdftotext", args...)
 	cmd.Stdin = r
 	cmd.Stdout = w
-	return cmd.Run()
+	cmd.Stderr = se
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("xpdf: %q failed: %w - %s", cmd.String(), err, se.String())
+	}
+	return nil
 }
 
 func buildPdfToTextArgs(input string, options ...string) []string {

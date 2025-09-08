@@ -88,3 +88,18 @@ func TestPdfReaderTextify(t *testing.T) {
 		}
 	}
 }
+
+func TestPdfFileTextifyBad(t *testing.T) {
+	testSkip(t)
+
+	cs := []string{"bad.pdf"}
+
+	for i, c := range cs {
+		fn := testFilename(c)
+		txt, err := PdfFileTextifyString(context.Background(), fn, "-layout")
+		if err == nil {
+			t.Fatalf("Expected error for PdfFileTextifyString(%s), got nil", fn)
+		}
+		fmt.Printf("[%d] PdfFileTextifyString(%s): %q\n%v\n", i, fn, txt, err)
+	}
+}

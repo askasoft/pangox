@@ -3,8 +3,10 @@ package tesseract
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os/exec"
+	"strings"
 
 	"github.com/askasoft/pango/str"
 )
@@ -18,10 +20,15 @@ func ImgFileTextifyString(ctx context.Context, name string, langs ...string) (st
 }
 
 func ImgFileTextify(ctx context.Context, w io.Writer, name string, langs ...string) error {
+	se := &strings.Builder{}
 	args := buildTesseractArgs(name, langs...)
 	cmd := exec.CommandContext(ctx, "tesseract", args...)
 	cmd.Stdout = w
-	return cmd.Run()
+	cmd.Stderr = se
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("tesseract: %q failed: %w - %s", cmd.String(), err, se.String())
+	}
+	return nil
 }
 
 func ImgReaderTextifyString(ctx context.Context, r io.Reader, langs ...string) (string, error) {
@@ -31,11 +38,16 @@ func ImgReaderTextifyString(ctx context.Context, r io.Reader, langs ...string) (
 }
 
 func ImgReaderTextify(ctx context.Context, w io.Writer, r io.Reader, langs ...string) error {
+	se := &strings.Builder{}
 	args := buildTesseractArgs("-", langs...)
 	cmd := exec.CommandContext(ctx, "tesseract", args...)
 	cmd.Stdin = r
 	cmd.Stdout = w
-	return cmd.Run()
+	cmd.Stderr = se
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("tesseract: %q failed: %w - %s", cmd.String(), err, se.String())
+	}
+	return nil
 }
 
 func buildTesseractArgs(input string, langs ...string) []string {
