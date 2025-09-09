@@ -13,7 +13,7 @@ type XFS interface {
 	FindFile(id string) (*File, error)
 
 	// SaveFile save a file
-	SaveFile(id string, filename string, modTime time.Time, data []byte) (*File, error)
+	SaveFile(id string, filename string, modTime time.Time, data []byte, tag ...string) (*File, error)
 
 	// ReadFile read file data
 	ReadFile(fid string) ([]byte, error)
@@ -33,11 +33,17 @@ type XFS interface {
 	// DeletePrefix delete files by prefix
 	DeletePrefix(prefix string) (int64, error)
 
+	// DeleteTag delete files by tag
+	DeleteTag(tag string) (int64, error)
+
 	// DeleteBefore delete files by time
 	DeleteBefore(before time.Time) (int64, error)
 
 	// DeletePrefixBefore delete files by prefix and time
 	DeletePrefixBefore(prefix string, before time.Time) (int64, error)
+
+	// DeleteTagBefore delete files by tag and time
+	DeleteTagBefore(tag string, before time.Time) (int64, error)
 
 	// DeleteWhere delete files by customized where filter
 	DeleteWhere(where string, args ...any) (int64, error)

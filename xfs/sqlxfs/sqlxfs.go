@@ -52,7 +52,7 @@ func (sfs *sfs) FindFile(id string) (*xfs.File, error) {
 	return f, nil
 }
 
-func (sfs *sfs) SaveFile(id string, filename string, modTime time.Time, data []byte) (*xfs.File, error) {
+func (sfs *sfs) SaveFile(id string, filename string, modTime time.Time, data []byte, tag ...string) (*xfs.File, error) {
 	name := filepath.Base(filename)
 	fext := str.ToLower(filepath.Ext(filename))
 
@@ -60,6 +60,7 @@ func (sfs *sfs) SaveFile(id string, filename string, modTime time.Time, data []b
 		ID:   id,
 		Name: name,
 		Ext:  fext,
+		Tag:  str.NonEmpty(tag...),
 		Size: int64(len(data)),
 		Time: modTime,
 		Data: data,
@@ -70,6 +71,7 @@ func (sfs *sfs) SaveFile(id string, filename string, modTime time.Time, data []b
 		sqb.Update(sfs.tb)
 		sqb.Setc("name", fi.Name)
 		sqb.Setc("ext", fi.Ext)
+		sqb.Setc("tag", fi.Tag)
 		sqb.Setc("size", fi.Size)
 		sqb.Setc("time", fi.Time)
 		sqb.Setc("data", fi.Data)
@@ -79,6 +81,7 @@ func (sfs *sfs) SaveFile(id string, filename string, modTime time.Time, data []b
 		sqb.Setc("id", fi.ID)
 		sqb.Setc("name", fi.Name)
 		sqb.Setc("ext", fi.Ext)
+		sqb.Setc("tag", fi.Tag)
 		sqb.Setc("size", fi.Size)
 		sqb.Setc("time", fi.Time)
 		sqb.Setc("data", fi.Data)
@@ -178,12 +181,20 @@ func (sfs *sfs) DeletePrefix(prefix string) (int64, error) {
 	return sfs.DeleteWhere("id LIKE ?", sqx.StartsLike(prefix))
 }
 
+func (sfs *sfs) DeleteTag(tag string) (int64, error) {
+	return sfs.DeleteWhere("tag = ?", tag)
+}
+
 func (sfs *sfs) DeleteBefore(before time.Time) (int64, error) {
 	return sfs.DeleteWhere("time < ?", before)
 }
 
 func (sfs *sfs) DeletePrefixBefore(prefix string, before time.Time) (int64, error) {
 	return sfs.DeleteWhere("id LIKE ? AND time < ?", sqx.StartsLike(prefix), before)
+}
+
+func (sfs *sfs) DeleteTagBefore(tag string, before time.Time) (int64, error) {
+	return sfs.DeleteWhere("tag = ? AND time < ?", tag, before)
 }
 
 func (sfs *sfs) DeleteWhere(where string, args ...any) (int64, error) {

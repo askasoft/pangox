@@ -13,7 +13,7 @@ import (
 	"github.com/askasoft/pango/str"
 )
 
-func SaveLocalFile(xfs XFS, id string, filename string) (*File, error) {
+func SaveLocalFile(xfs XFS, id string, filename string, tag ...string) (*File, error) {
 	fi, err := os.Stat(filename)
 	if err != nil {
 		return nil, err
@@ -24,43 +24,24 @@ func SaveLocalFile(xfs XFS, id string, filename string) (*File, error) {
 		return nil, err
 	}
 
-	return xfs.SaveFile(id, filename, fi.ModTime(), data)
+	return xfs.SaveFile(id, filename, fi.ModTime(), data, tag...)
 }
 
-func SaveUploadedFile(xfs XFS, id string, file *multipart.FileHeader) (*File, error) {
+func SaveUploadedFile(xfs XFS, id string, file *multipart.FileHeader, tag ...string) (*File, error) {
 	data, err := httpx.ReadMultipartFile(file)
 	if err != nil {
 		return nil, err
 	}
 
 	fn := str.ToValidUTF8(file.Filename, " ")
-	return xfs.SaveFile(id, fn, time.Now(), data)
+	return xfs.SaveFile(id, fn, time.Now(), data, tag...)
 }
 
-func CleanOutdatedFiles(xfs XFS, prefix string, before time.Time, loggers ...log.Logger) {
-	logger := getLogger(loggers...)
-
-	tm := before.Format(time.RFC3339)
-
-	logger.Debugf("CleanOutdatedFiles('%s', '%s')", prefix, tm)
-
-	var (
-		cnt int64
-		err error
-	)
-
-	if prefix == "" {
-		cnt, err = xfs.DeleteBefore(before)
-	} else {
-		cnt, err = xfs.DeletePrefixBefore(prefix, before)
+func getLogger(loggers ...log.Logger) log.Logger {
+	if len(loggers) > 0 {
+		return loggers[0]
 	}
-
-	if err != nil {
-		logger.Errorf("CleanOutdatedFiles('%s', '%s') failed: %v", prefix, tm, err)
-		return
-	}
-
-	logger.Infof("CleanOutdatedFiles('%s', '%s'): %d", prefix, tm, cnt)
+	return log.GetLogger("XFS")
 }
 
 func CleanOutdatedLocalFiles(dir string, before time.Time, loggers ...log.Logger) {
@@ -114,9 +95,54 @@ func CleanOutdatedLocalFiles(dir string, before time.Time, loggers ...log.Logger
 	}
 }
 
-func getLogger(loggers ...log.Logger) log.Logger {
-	if len(loggers) > 0 {
-		return loggers[0]
+func CleanOutdatedPrefixFiles(xfs XFS, prefix string, before time.Time, loggers ...log.Logger) {
+	logger := getLogger(loggers...)
+
+	tm := before.Format(time.RFC3339)
+
+	logger.Debugf("CleanOutdatedPrefixFiles('%s', '%s')", prefix, tm)
+
+	var (
+		cnt int64
+		err error
+	)
+
+	if prefix == "" {
+		cnt, err = xfs.DeleteBefore(before)
+	} else {
+		cnt, err = xfs.DeletePrefixBefore(prefix, before)
 	}
-	return log.GetLogger("XFS")
+
+	if err != nil {
+		logger.Errorf("CleanOutdatedPrefixFiles('%s', '%s') failed: %v", prefix, tm, err)
+		return
+	}
+
+	logger.Infof("CleanOutdatedPrefixFiles('%s', '%s'): %d", prefix, tm, cnt)
+}
+
+func CleanOutdatedTaggedFiles(xfs XFS, tag string, before time.Time, loggers ...log.Logger) {
+	logger := getLogger(loggers...)
+
+	tm := before.Format(time.RFC3339)
+
+	logger.Debugf("CleanOutdatedTaggedFiles('%s', '%s')", tag, tm)
+
+	var (
+		cnt int64
+		err error
+	)
+
+	if tag == "" {
+		cnt, err = xfs.DeleteBefore(before)
+	} else {
+		cnt, err = xfs.DeleteTagBefore(tag, before)
+	}
+
+	if err != nil {
+		logger.Errorf("CleanOutdatedTaggedFiles('%s', '%s') failed: %v", tag, tm, err)
+		return
+	}
+
+	logger.Infof("CleanOutdatedTaggedFiles('%s', '%s'): %d", tag, tm, cnt)
 }
