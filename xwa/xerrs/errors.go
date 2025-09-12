@@ -26,9 +26,14 @@ func NewClientError(err error) error {
 	return &ClientError{Err: err}
 }
 
+func AsClientError(err error) (ce *ClientError, ok bool) {
+	ok = errors.As(err, &ce)
+	return
+}
+
 func IsClientError(err error) bool {
-	var ce *ClientError
-	return errors.As(err, &ce)
+	_, ok := AsClientError(err)
+	return ok
 }
 
 func (ce *ClientError) Error() string {
@@ -47,9 +52,14 @@ func NewFailedError(err error) error {
 	return &FailedError{Err: err}
 }
 
+func AsFailedError(err error) (fe *FailedError, ok bool) {
+	ok = errors.As(err, &fe)
+	return
+}
+
 func IsFailedError(err error) bool {
-	var fe *FailedError
-	return errors.As(err, &fe)
+	_, ok := AsFailedError(err)
+	return ok
 }
 
 func (fe *FailedError) Error() string {
@@ -57,5 +67,31 @@ func (fe *FailedError) Error() string {
 }
 
 func (fe *FailedError) Unwrap() error {
+	return fe.Err
+}
+
+type SkippedError struct {
+	Err error
+}
+
+func NewSkippedError(err error) error {
+	return &SkippedError{Err: err}
+}
+
+func AsSkippedError(err error) (se *SkippedError, ok bool) {
+	ok = errors.As(err, &se)
+	return
+}
+
+func IsSkippedError(err error) bool {
+	_, ok := AsSkippedError(err)
+	return ok
+}
+
+func (fe *SkippedError) Error() string {
+	return fe.Err.Error()
+}
+
+func (fe *SkippedError) Unwrap() error {
 	return fe.Err
 }
