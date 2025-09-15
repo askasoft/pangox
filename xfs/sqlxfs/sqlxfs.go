@@ -36,7 +36,7 @@ func (sfs *sfs) Open(name string) (fs.File, error) {
 // FindFile find a file
 func (sfs *sfs) FindFile(id string) (*xfs.File, error) {
 	sqb := sfs.db.Builder()
-	sqb.Select("id", "name", "ext", "size", "time")
+	sqb.Select("id", "name", "ext", "tag", "size", "time")
 	sqb.From(sfs.tb).Where("id = ?", id)
 	sql, args := sqb.Build()
 
@@ -52,7 +52,7 @@ func (sfs *sfs) FindFile(id string) (*xfs.File, error) {
 	return f, nil
 }
 
-func (sfs *sfs) SaveFile(id string, filename string, modTime time.Time, data []byte, tag ...string) (*xfs.File, error) {
+func (sfs *sfs) SaveFile(id string, filename string, filetime time.Time, data []byte, tag ...string) (*xfs.File, error) {
 	name := filepath.Base(filename)
 	fext := str.ToLower(filepath.Ext(filename))
 
@@ -62,7 +62,7 @@ func (sfs *sfs) SaveFile(id string, filename string, modTime time.Time, data []b
 		Ext:  fext,
 		Tag:  str.NonEmpty(tag...),
 		Size: int64(len(data)),
-		Time: modTime,
+		Time: filetime,
 		Data: data,
 	}
 
@@ -121,12 +121,22 @@ func (sfs *sfs) ReadFile(id string) ([]byte, error) {
 	return f.Data, nil
 }
 
-func (sfs *sfs) CopyFile(src, dst string) error {
+func (sfs *sfs) CopyFile(src, dst string, tag ...string) error {
 	tb := sfs.db.Quote(sfs.tb)
-	sql := fmt.Sprintf("INSERT INTO %s (id, name, ext, time, size, data) SELECT ?, name, ext, time, size, data FROM %s WHERE id = ?", tb, tb)
+
+	var args []any
+
+	sql := fmt.Sprintf("INSERT INTO %s (id, name, ext, tag, time, size, data) ", tb)
+	if len(tag) == 0 {
+		sql += fmt.Sprintf("SELECT ?, name, ext, tag, time, size, data FROM %s WHERE id = ?", tb)
+		args = append(args, dst, src)
+	} else {
+		sql += fmt.Sprintf("SELECT ? AS id, name, ext, ? AS tag, time, size, data FROM %s WHERE id = ?", tb)
+		args = append(args, dst, str.NonEmpty(tag...), src)
+	}
 	sql = sfs.db.Rebind(sql)
 
-	r, err := sfs.db.Exec(sql, dst, src)
+	r, err := sfs.db.Exec(sql, args...)
 	if err != nil {
 		return err
 	}
@@ -141,10 +151,13 @@ func (sfs *sfs) CopyFile(src, dst string) error {
 	return nil
 }
 
-func (sfs *sfs) MoveFile(src, dst string) error {
+func (sfs *sfs) MoveFile(src, dst string, tag ...string) error {
 	sqb := sfs.db.Builder()
 	sqb.Update(sfs.tb)
 	sqb.Setc("id", dst)
+	if len(tag) > 0 {
+		sqb.Setc("tag", str.NonEmpty(tag...))
+	}
 	sqb.Where("id = ?", src)
 	sql, args := sqb.Build()
 

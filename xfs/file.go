@@ -8,7 +8,7 @@ type File struct {
 	ID   string    `gorm:"size:255;not null;primaryKey" json:"id"`
 	Name string    `gorm:"not null;" json:"name"`
 	Ext  string    `gorm:"not null;" json:"ext"`
-	Tag  string    `gorm:"not null;" json:"tag"`
+	Tag  string    `gorm:"not null;default:'';index:idx_files_tag" json:"tag"`
 	Time time.Time `gorm:"not null" json:"time"`
 	Size int64     `gorm:"not null;" json:"size"`
 	Data []byte    `gorm:"not null" json:"-"`

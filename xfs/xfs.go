@@ -13,16 +13,16 @@ type XFS interface {
 	FindFile(id string) (*File, error)
 
 	// SaveFile save a file
-	SaveFile(id string, filename string, modTime time.Time, data []byte, tag ...string) (*File, error)
+	SaveFile(id string, filename string, filetime time.Time, data []byte, tag ...string) (*File, error)
 
 	// ReadFile read file data
 	ReadFile(fid string) ([]byte, error)
 
 	// CopyFile copy file `src` to `dst`
-	CopyFile(src, dst string) error
+	CopyFile(src, dst string, tag ...string) error
 
 	// MoveFile move file `src` to `dst`
-	MoveFile(src, dst string) error
+	MoveFile(src, dst string, tag ...string) error
 
 	// DeleteFile delete file by id
 	DeleteFile(id string) error
