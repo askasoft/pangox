@@ -181,7 +181,7 @@ func (sfs *sfs) DeletePrefix(prefix string) (int64, error) {
 	return sfs.DeleteWhere("id LIKE ?", sqx.StartsLike(prefix))
 }
 
-func (sfs *sfs) DeleteTag(tag string) (int64, error) {
+func (sfs *sfs) DeleteTagged(tag string) (int64, error) {
 	return sfs.DeleteWhere("tag = ?", tag)
 }
 
@@ -193,7 +193,7 @@ func (sfs *sfs) DeletePrefixBefore(prefix string, before time.Time) (int64, erro
 	return sfs.DeleteWhere("id LIKE ? AND time < ?", sqx.StartsLike(prefix), before)
 }
 
-func (sfs *sfs) DeleteTagBefore(tag string, before time.Time) (int64, error) {
+func (sfs *sfs) DeleteTaggedBefore(tag string, before time.Time) (int64, error) {
 	return sfs.DeleteWhere("tag = ? AND time < ?", tag, before)
 }
 

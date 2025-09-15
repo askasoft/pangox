@@ -136,7 +136,7 @@ func CleanOutdatedTaggedFiles(xfs XFS, tag string, before time.Time, loggers ...
 	if tag == "" {
 		cnt, err = xfs.DeleteBefore(before)
 	} else {
-		cnt, err = xfs.DeleteTagBefore(tag, before)
+		cnt, err = xfs.DeleteTaggedBefore(tag, before)
 	}
 
 	if err != nil {

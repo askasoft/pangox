@@ -27,5 +27,5 @@ func SQLCommentSchema(name string, comment string) string {
 }
 
 func SQLDeleteSchema(name string) string {
-	return fmt.Sprintf("DROP SCHEMA " + name)
+	return "DROP SCHEMA " + name
 }
