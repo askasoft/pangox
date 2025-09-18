@@ -27,10 +27,10 @@ func (sjc *sjc) GetJobChain(cid int64) (*xjm.JobChain, error) {
 
 	jc := &xjm.JobChain{}
 	err := sjc.db.Get(jc, sql, args...)
-	if errors.Is(err, sqlx.ErrNoRows) {
-		return nil, nil
-	}
 	if err != nil {
+		if errors.Is(err, sqlx.ErrNoRows) {
+			return nil, xjm.ErrJobChainMissing
+		}
 		return nil, err
 	}
 	return jc, nil

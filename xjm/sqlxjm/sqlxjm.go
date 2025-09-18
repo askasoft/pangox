@@ -91,10 +91,10 @@ func (sjm *sjm) GetJob(jid int64, cols ...string) (*xjm.Job, error) {
 
 	job := &xjm.Job{}
 	err := sjm.db.Get(job, sql, args...)
-	if errors.Is(err, sqlx.ErrNoRows) {
-		return nil, nil
-	}
 	if err != nil {
+		if errors.Is(err, sqlx.ErrNoRows) {
+			return nil, xjm.ErrJobMissing
+		}
 		return nil, err
 	}
 	return job, nil
@@ -361,7 +361,7 @@ func (sjm *sjm) ReappendJobs(before time.Time) (int64, error) {
 
 	sqb.Update(sjm.jt)
 	sqb.Setc("rid", 0)
-	sqb.Setc("state", xjm.JobStatusPending)
+	sqb.Setc("status", xjm.JobStatusPending)
 	sqb.Setc("error", "")
 	sqb.Setc("updated_at", time.Now())
 	sqb.Where("status = ?", xjm.JobStatusRunning)

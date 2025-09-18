@@ -14,6 +14,23 @@ const (
 	JobStatusRunning  = "R"
 )
 
+func JobStatusText(js string) string {
+	switch js {
+	case JobStatusAborted:
+		return "aborted"
+	case JobStatusCanceled:
+		return "canceled"
+	case JobStatusFinished:
+		return "finished"
+	case JobStatusPending:
+		return "pending"
+	case JobStatusRunning:
+		return "running"
+	default:
+		return "unknown"
+	}
+}
+
 var (
 	JobDoneStatus   = []string{JobStatusAborted, JobStatusCanceled, JobStatusFinished}
 	JobUndoneStatus = []string{JobStatusPending, JobStatusRunning}

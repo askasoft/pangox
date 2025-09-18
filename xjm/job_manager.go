@@ -31,6 +31,7 @@ type JobManager interface {
 
 	// GetJob get a job
 	// cols: columns to select, if omit then select all columns (*)
+	// returns (nil, ErrJobMissing) if job is not found
 	GetJob(jid int64, cols ...string) (*Job, error)
 
 	// FindJob find a job

@@ -9,20 +9,20 @@ import (
 
 type JobRunner struct {
 	job *Job
-	jmr JobManager
+	xjm JobManager
 	jlw *JobLogWriter
 	log *log.Log
 }
 
 // NewJobRunner create a JobRunner
-func NewJobRunner(job *Job, jmr JobManager, logger ...log.Logger) *JobRunner {
+func NewJobRunner(job *Job, xjm JobManager, logger ...log.Logger) *JobRunner {
 	jr := &JobRunner{
 		job: job,
-		jmr: jmr,
+		xjm: xjm,
 		log: log.NewLog(),
 	}
 
-	jr.jlw = NewJobLogWriter(jmr, job.ID)
+	jr.jlw = NewJobLogWriter(xjm, job.ID)
 
 	var lw log.Writer = jr.jlw
 	if len(logger) > 0 {
@@ -37,8 +37,8 @@ func (jr *JobRunner) Log() *log.Log {
 	return jr.log
 }
 
-func (jr *JobRunner) JobManager() JobManager {
-	return jr.jmr
+func (jr *JobRunner) XJM() JobManager {
+	return jr.xjm
 }
 
 func (jr *JobRunner) JobLogWriter() *JobLogWriter {
@@ -70,35 +70,35 @@ func (jr *JobRunner) JobParam() string {
 }
 
 func (jr *JobRunner) GetJob(cols ...string) (*Job, error) {
-	return jr.jmr.GetJob(jr.job.ID, cols...)
+	return jr.xjm.GetJob(jr.job.ID, cols...)
 }
 
 func (jr *JobRunner) Checkout() error {
-	return jr.jmr.CheckoutJob(jr.job.ID, jr.job.RID)
+	return jr.xjm.CheckoutJob(jr.job.ID, jr.job.RID)
 }
 
 func (jr *JobRunner) SetState(state string) error {
-	return jr.jmr.SetJobState(jr.job.ID, jr.job.RID, state)
+	return jr.xjm.SetJobState(jr.job.ID, jr.job.RID, state)
 }
 
 func (jr *JobRunner) AddResult(result string) error {
-	return jr.jmr.AddJobResult(jr.job.ID, jr.job.RID, result)
+	return jr.xjm.AddJobResult(jr.job.ID, jr.job.RID, result)
 }
 
 func (jr *JobRunner) Abort(reason string) error {
-	return jr.jmr.AbortJob(jr.job.ID, reason)
+	return jr.xjm.AbortJob(jr.job.ID, reason)
 }
 
 func (jr *JobRunner) Cancel(reason string) error {
-	return jr.jmr.CancelJob(jr.job.ID, reason)
+	return jr.xjm.CancelJob(jr.job.ID, reason)
 }
 
 func (jr *JobRunner) Finish() error {
-	return jr.jmr.FinishJob(jr.job.ID)
+	return jr.xjm.FinishJob(jr.job.ID)
 }
 
 func (jr *JobRunner) Pin() error {
-	return jr.jmr.PinJob(jr.job.ID, jr.job.RID)
+	return jr.xjm.PinJob(jr.job.ID, jr.job.RID)
 }
 
 func (jr *JobRunner) Running(ctx context.Context, getTimeout, pinTimeout time.Duration) error {

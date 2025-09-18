@@ -11,6 +11,7 @@ var (
 
 type JobChainer interface {
 	// GetJobChain get a job chain
+	// returns (nil, ErrJobChainMissing) if job is not found
 	GetJobChain(cid int64) (*JobChain, error)
 
 	// FindJobChain find a job chain
