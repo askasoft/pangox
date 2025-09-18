@@ -131,7 +131,7 @@ func InitLogs() error {
 
 	log.Infof("Directory  : %s", gog.First(os.Getwd()))
 	log.Infof("ProcessID  : %d", os.Getpid())
-	log.Infof("InstanceID : 0x%x", InstanceID)
+	log.Infof("InstanceID : 0x%04x", InstanceID)
 
 	return nil
 }
