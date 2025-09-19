@@ -48,7 +48,7 @@ func OpenDatabase() error {
 
 	driver := sec.GetString("driver")
 	source := sec.GetString("source")
-	log.Infof("Connect Database (%s): %s", driver, source)
+	log.Infof("Connect database (%s): %s", driver, source)
 
 	db, err := sql.Open(driver, source)
 	if err != nil {
@@ -56,13 +56,13 @@ func OpenDatabase() error {
 	}
 
 	db.SetMaxIdleConns(sec.GetInt("maxIdleConns", 5))
-	db.SetConnMaxIdleTime(sec.GetDuration("connMaxIdleTime", time.Minute*5))
+	db.SetConnMaxIdleTime(sec.GetDuration("connMaxIdleTime", 5*time.Minute))
 	db.SetMaxOpenConns(sec.GetInt("maxOpenConns", 10))
-	db.SetConnMaxLifetime(sec.GetDuration("connMaxLifetime", time.Hour))
+	db.SetConnMaxLifetime(sec.GetDuration("connMaxLifetime", 10*time.Minute))
 
 	slg := sqlxlog.NewSqlxLogger(
 		log.GetLogger("SQL"),
-		sec.GetDuration("slowSql", time.Second),
+		sec.GetDuration("slowSQL", 2*time.Second),
 	)
 	slg.GetErrLogLevel = GetErrLogLevels[driver]
 
