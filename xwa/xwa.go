@@ -20,11 +20,14 @@ import (
 )
 
 var (
-	// LogConfigFile log config file
-	LogConfigFile = "conf/log.ini"
+	// DirConfig config directory (default: ./conf/)
+	DirConfig string
 
-	// AppConfigFile app config file
-	AppConfigFiles = []string{"conf/app.ini", "conf/env.ini"}
+	// LogConfigFile log config file (default: ./conf/log.ini)
+	LogConfigFile string
+
+	// AppConfigFile app config file (default: ./conf/app.ini,env.ini)
+	AppConfigFiles []string
 
 	// CFG global ini map
 	CFG map[string]map[string]string
@@ -83,10 +86,23 @@ func init() {
 	if Version == "" {
 		Version = "0.0.0"
 	}
+
+	SetDirConfig("./conf/")
 }
 
 func Versions() string {
 	return fmt.Sprintf("%s.%s (%s) [%s %s/%s]", Version, Revision, BuildTime.Local(), runtime.Version(), runtime.GOOS, runtime.GOARCH)
+}
+
+// SetDirConfig set DirConfig, LogConfigFile, AppConfigFiles as follows:
+//
+//	DirConfig = dir
+//	LogConfigFile = filepath.Join(dir, "log.ini")
+//	AppConfigFiles = []string{filepath.Join(dir, "app.ini"), filepath.Join(dir, "env.ini")}
+func SetDirConfig(dir string) {
+	DirConfig = dir
+	LogConfigFile = filepath.Join(dir, "log.ini")
+	AppConfigFiles = []string{filepath.Join(dir, "app.ini"), filepath.Join(dir, "env.ini")}
 }
 
 func InitLogs() error {
