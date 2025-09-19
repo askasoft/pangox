@@ -7,6 +7,7 @@ import (
 
 	"github.com/askasoft/pango/asg"
 	"github.com/askasoft/pango/cog/treemap"
+	"github.com/askasoft/pango/iox"
 	"github.com/askasoft/pango/str"
 	"github.com/askasoft/pangox/xjm"
 )
@@ -107,9 +108,7 @@ func (jm *JobsMap) Stats() (int, string) {
 
 	sb := &str.Builder{}
 
-	sep := str.RepeatByte('-', 80)
-
-	sb.WriteString(sep)
+	_, _ = iox.RepeatWrite(sb, []byte{'-'}, 80)
 	sb.WriteByte('\n')
 
 	for it := jm.tm.Iterator(); it.Next(); {
@@ -126,7 +125,7 @@ func (jm *JobsMap) Stats() (int, string) {
 			fmt.Fprintf(sb, "%d. %s#%d\n", i+1, job.Name, job.ID)
 		}
 	}
-	sb.WriteString(sep)
+	_, _ = iox.RepeatWrite(sb, []byte{'-'}, 80)
 
 	return total, sb.String()
 }
