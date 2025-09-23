@@ -144,19 +144,16 @@ func (jse *JobStateLixs) AddLastID(id int64) {
 }
 
 func (jse *JobStateLixs) AddFailureID(id int64) {
-	jse.Count++
-	jse.Failure++
+	jse.IncFailure()
 	jse.LastIDs = asg.DeleteEqual(jse.LastIDs, id)
 }
 
 func (jse *JobStateLixs) AddSuccessID(id int64) {
-	jse.Count++
-	jse.Success++
+	jse.IncSuccess()
 	jse.LastIDs = asg.DeleteEqual(jse.LastIDs, id)
 }
 
 func (jse *JobStateLixs) AddSkippedID(id int64) {
-	jse.Count++
-	jse.Skipped++
+	jse.IncSkipped()
 	jse.LastIDs = asg.DeleteEqual(jse.LastIDs, id)
 }
