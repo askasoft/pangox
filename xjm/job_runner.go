@@ -19,7 +19,7 @@ func NewJobRunner(job *Job, xjm JobManager, logger ...log.Logger) *JobRunner {
 	jr := &JobRunner{
 		job: job,
 		xjm: xjm,
-		log: log.NewLog(),
+		log: log.Clone(),
 	}
 
 	jr.jlw = NewJobLogWriter(xjm, job.ID)
