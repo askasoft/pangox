@@ -33,6 +33,36 @@ func (si *FailedItem) String() string {
 	return fmt.Sprintf("#%d %s - %s", si.ID, si.Title, si.Error)
 }
 
+type IJobRunner interface {
+	Checkout() error
+	Run() error
+	Done(error)
+}
+
+func RunJob(run IJobRunner) {
+	run.Done(safeRun(run))
+}
+
+func safeRun(run IJobRunner) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			if e, ok := r.(error); ok {
+				err = e
+			} else {
+				err = fmt.Errorf("panic: %v", r)
+			}
+		}
+	}()
+
+	err = run.Checkout()
+	if err != nil {
+		return
+	}
+
+	err = run.Run()
+	return
+}
+
 type JobRunner struct {
 	xjc xjm.JobChainer
 
