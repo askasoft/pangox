@@ -3,6 +3,8 @@ package xerrs
 import (
 	"context"
 	"errors"
+
+	"github.com/askasoft/pango/tbs"
 )
 
 func ContextCause(ctx context.Context, errs ...error) error {
@@ -94,4 +96,35 @@ func (fe *SkippedError) Error() string {
 
 func (fe *SkippedError) Unwrap() error {
 	return fe.Err
+}
+
+type LocaleError struct {
+	name string
+	vars []any
+}
+
+func NewLocaleError(name string, vars ...any) *LocaleError {
+	return &LocaleError{name, vars}
+}
+
+func AsLocaleError(err error) (le *LocaleError, ok bool) {
+	ok = errors.As(err, &le)
+	return
+}
+
+func IsLocaleError(err error) bool {
+	_, ok := AsLocaleError(err)
+	return ok
+}
+
+func (le *LocaleError) Error() string {
+	return le.LocaleError("")
+}
+
+func (le *LocaleError) LocaleError(loc string) string {
+	err := tbs.Format(loc, le.name, le.vars...)
+	if err == "" {
+		err = le.name
+	}
+	return err
 }

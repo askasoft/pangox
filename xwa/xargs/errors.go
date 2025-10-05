@@ -10,31 +10,11 @@ import (
 	"github.com/askasoft/pango/vad"
 	"github.com/askasoft/pango/xin"
 	"github.com/askasoft/pango/xin/binding"
+	"github.com/askasoft/pangox/xwa/xerrs"
 )
 
 var ErrInvalidID = errors.New("invalid id")
 var ErrInvalidUpdates = errors.New("invalid updates")
-
-type LocaleError struct {
-	name string
-	vars []any
-}
-
-func NewLocaleError(name string, vars ...any) *LocaleError {
-	return &LocaleError{name, vars}
-}
-
-func (le *LocaleError) Error() string {
-	return le.LocaleError("")
-}
-
-func (le *LocaleError) LocaleError(loc string) string {
-	err := tbs.Format(loc, le.name, le.vars...)
-	if err == "" {
-		err = le.name
-	}
-	return err
-}
 
 type ParamError struct {
 	Param   string `json:"param,omitempty"`
@@ -116,8 +96,7 @@ func TranslateBindErrors(locale string, err error, ns string, tf func(error)) {
 		for _, fe := range *ves {
 			fk := str.SnakeCase(fe.Field())
 
-			var le *LocaleError
-			if ok := errors.As(fe.Cause(), &le); ok {
+			if le, ok := xerrs.AsLocaleError(fe.Cause()); ok {
 				fn := tbs.GetText(locale, ns+fk, fk)
 				em := le.LocaleError(locale)
 				tf(&ParamError{Param: fk, Label: fn, Message: em})
