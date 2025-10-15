@@ -12,6 +12,30 @@ func (ws Wildcards) String() string {
 	return str.Join(ws, "\n")
 }
 
+func (ws Wildcards) StartsWith(v string) bool {
+	if len(ws) == 0 {
+		return false
+	}
+
+	f := func(s string) bool {
+		return wildcard.StartsWith(s, v)
+	}
+	return asg.ContainsFunc(ws, f)
+}
+
+func (ws Wildcards) StartsWithAny(vs ...string) bool {
+	if len(ws) == 0 {
+		return false
+	}
+
+	f := func(s string) bool {
+		return asg.ContainsFunc(vs, func(v string) bool {
+			return wildcard.StartsWith(s, v)
+		})
+	}
+	return asg.ContainsFunc(ws, f)
+}
+
 func (ws Wildcards) Match(v string) bool {
 	if len(ws) == 0 {
 		return false
