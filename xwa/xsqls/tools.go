@@ -13,16 +13,11 @@ import (
 	"github.com/askasoft/pango/str"
 )
 
-func ExecSQL(db *sqlx.DB, schema, sqls string, logs ...log.Logger) error {
-	logger := asg.First(logs)
+func ExecSQL(db *sqlx.DB, schema, sqls string, loggers ...log.Logger) error {
+	logger := asg.First(loggers)
 	if logger == nil {
 		logger = log.GetLogger("SQL")
 	}
-
-	logger.Info(str.PadCenter(" "+schema+" ", 78, "="))
-
-	qte := db.Quoter()
-	sqls = str.ReplaceAll(sqls, qte.Quote("SCHEMA"), schema)
 
 	err := db.Transaction(func(tx *sqlx.Tx) error {
 		sb := &str.Builder{}
@@ -77,7 +72,7 @@ func ExecSQL(db *sqlx.DB, schema, sqls string, logs ...log.Logger) error {
 
 					err = rows.Scan(ptrs...)
 					if err != nil {
-						logger.Errorf("#%d = %s", i, sqs)
+						logger.Errorf("#%d = %s\n%v", i, sqs, err)
 						return err
 					}
 
