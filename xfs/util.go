@@ -33,8 +33,8 @@ func SaveUploadedFile(xfs XFS, id string, file *multipart.FileHeader, tag ...str
 		return nil, err
 	}
 
-	fn := str.ToValidUTF8(file.Filename, " ")
-	return xfs.SaveFile(id, fn, time.Now(), data, tag...)
+	filename := str.ToValidUTF8(file.Filename, " ")
+	return xfs.SaveFile(id, filename, time.Now(), data, tag...)
 }
 
 func getLogger(loggers ...log.Logger) log.Logger {

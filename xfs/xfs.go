@@ -7,16 +7,13 @@ import (
 )
 
 type XFS interface {
-	fs.FS
+	fs.ReadFileFS
 
 	// FindFile find a file
 	FindFile(id string) (*File, error)
 
 	// SaveFile save a file
 	SaveFile(id string, filename string, filetime time.Time, data []byte, tag ...string) (*File, error)
-
-	// ReadFile read file data
-	ReadFile(fid string) ([]byte, error)
 
 	// CopyFile copy file `src` to `dst`
 	CopyFile(src, dst string, tag ...string) error
