@@ -13,23 +13,28 @@ import (
 	"github.com/askasoft/pango/str"
 )
 
-func ExecSQL(db *sqlx.DB, schema, sqls string, loggers ...log.Logger) error {
+func getLogger(loggers ...log.Logger) log.Logger {
 	logger := asg.First(loggers)
 	if logger == nil {
 		logger = log.GetLogger("SQL")
 	}
+	return logger
+}
+
+func ExecSQL(db *sqlx.DB, schema, sqls string, loggers ...log.Logger) error {
+	logger := getLogger(loggers...)
 
 	err := db.Transaction(func(tx *sqlx.Tx) error {
 		sb := &str.Builder{}
 
-		sqlr := sqx.NewSqlReader(str.NewReader(sqls))
+		sqr := sqx.NewSqlReader(str.NewReader(sqls))
 
 		for i := 1; ; i++ {
-			sqs, err := sqlr.ReadSql()
-			if errors.Is(err, io.EOF) {
-				return nil
-			}
+			sqs, err := sqr.ReadSql()
 			if err != nil {
+				if errors.Is(err, io.EOF) {
+					return nil
+				}
 				return err
 			}
 
