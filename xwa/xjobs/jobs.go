@@ -1,8 +1,8 @@
 package xjobs
 
 import (
-	"cmp"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/askasoft/pango/asg"
@@ -34,7 +34,7 @@ type JobsMap struct {
 }
 
 func NewJobsMap() *JobsMap {
-	return &JobsMap{tm: treemap.NewTreeMap[string, *Jobs](cmp.Compare[string])}
+	return &JobsMap{tm: treemap.NewTreeMap[string, *Jobs](strings.Compare)}
 }
 
 func (jm *JobsMap) Total() (total int) {
