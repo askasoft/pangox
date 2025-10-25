@@ -3,9 +3,9 @@ package xmwas
 import (
 	"io/fs"
 
+	"github.com/askasoft/pango/asg"
 	"github.com/askasoft/pango/fsu"
 	"github.com/askasoft/pango/gog"
-	"github.com/askasoft/pango/str"
 	"github.com/askasoft/pango/xin"
 	"github.com/askasoft/pangox/xwa"
 )
@@ -27,7 +27,7 @@ func AddStaticsHandlers(rg *xin.RouterGroup, statics map[string]fs.FS) {
 func AddDynamicFolderHandlers(rg *xin.RouterGroup, dfs *fs.FS, suffixs ...string) {
 	wfs := fsu.FixedModTimeFS(dynafs{dfs}, xwa.BuildTime)
 
-	sfx := str.NonEmpty(suffixs...)
+	sfx := asg.First(suffixs)
 	if sfx != "" {
 		sfx = "/" + sfx
 	}

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/askasoft/pango/asg"
 	"github.com/askasoft/pango/sqx"
 	"github.com/askasoft/pango/sqx/sqlx"
 	"github.com/askasoft/pango/str"
@@ -60,7 +61,7 @@ func (sfs *sfs) SaveFile(id string, filename string, filetime time.Time, data []
 		ID:   id,
 		Name: name,
 		Ext:  fext,
-		Tag:  str.NonEmpty(tag...),
+		Tag:  asg.First(tag),
 		Size: int64(len(data)),
 		Time: filetime,
 		Data: data,
@@ -132,7 +133,7 @@ func (sfs *sfs) CopyFile(src, dst string, tag ...string) error {
 		args = append(args, dst, src)
 	} else {
 		sql += fmt.Sprintf("SELECT ? AS id, name, ext, ? AS tag, time, size, data FROM %s WHERE id = ?", tb)
-		args = append(args, dst, str.NonEmpty(tag...), src)
+		args = append(args, dst, tag[0], src)
 	}
 	sql = sfs.db.Rebind(sql)
 
@@ -156,7 +157,7 @@ func (sfs *sfs) MoveFile(src, dst string, tag ...string) error {
 	sqb.Update(sfs.tb)
 	sqb.Setc("id", dst)
 	if len(tag) > 0 {
-		sqb.Setc("tag", str.NonEmpty(tag...))
+		sqb.Setc("tag", tag[0])
 	}
 	sqb.Where("id = ?", src)
 	sql, args := sqb.Build()
