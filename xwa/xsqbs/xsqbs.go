@@ -3,6 +3,7 @@ package xsqbs
 import (
 	"time"
 
+	"github.com/askasoft/pango/asg"
 	"github.com/askasoft/pango/num"
 	"github.com/askasoft/pango/sqx"
 	"github.com/askasoft/pango/sqx/sqlx"
@@ -16,7 +17,7 @@ func AddPager(sqb *sqlx.Builder, p *args.Pager) {
 	sqb.Offset(p.Start()).Limit(p.Limit)
 }
 
-func AddOrder(sqb *sqlx.Builder, st *args.Sorter, defcol string) {
+func AddSorter(sqb *sqlx.Builder, st *xargs.Sorter, defcol string) {
 	cols := str.FieldsByte(st.Col, ',')
 
 	defs := false
@@ -34,6 +35,38 @@ func AddOrder(sqb *sqlx.Builder, st *args.Sorter, defcol string) {
 
 	if !defs {
 		sqb.Order(defcol, st.IsDesc())
+	}
+}
+
+func addOrder(sqb *sqlx.Builder, o string) {
+	c, a, ok := str.CutByte(o, '.')
+	if ok {
+		c = c + "->>'" + a + "'"
+	}
+
+	desc := str.StartsWithByte(c, '-')
+	if desc {
+		c = c[1:]
+	}
+
+	sqb.Order(c, desc)
+}
+
+func AddOrders(sqb *sqlx.Builder, order, defaults string) {
+	orders := str.FieldsByte(order, ',')
+	defods := str.FieldsByte(defaults, ',')
+
+	for _, o := range orders {
+		addOrder(sqb, o)
+
+		o = str.TrimPrefix(o, "-")
+		defods = asg.DeleteFunc(defods, func(s string) bool {
+			return o == str.TrimPrefix(s, "-")
+		})
+	}
+
+	for _, o := range defods {
+		addOrder(sqb, o)
 	}
 }
 

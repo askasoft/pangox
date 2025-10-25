@@ -148,10 +148,7 @@ func (ssm *ssm) FindSchemas(sq *xsm.SchemaQuery) (schemas []*xsm.SchemaInfo, err
 	sqb.From("pg_catalog.pg_namespace")
 	ssm.addQuery(sqb, sq)
 
-	sqb.Order(sq.Col, sq.IsDesc())
-	if sq.Col != "name" {
-		sqb.Order("name", sq.IsDesc())
-	}
+	sqb.Orders(sq.Order, "name")
 	sqb.Offset(sq.Start()).Limit(sq.Limit)
 
 	sql, args := sqb.Build()
