@@ -12,7 +12,7 @@ type SchemaInfo struct {
 
 type SchemaQuery struct {
 	args.Pager
-	args.Sorter
+	args.Orders
 	Name string `json:"name,omitempty" form:"name,strip"`
 }
 
