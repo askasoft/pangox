@@ -30,7 +30,7 @@ func InitScheduler() error {
 			if err != nil {
 				return fmt.Errorf("invalid task '%s' cron: %w", name, err)
 			}
-			log.Infof("Schedule Task %s: %s", name, cron)
+			log.Infof("Schedule task %q: %s", name, cron)
 			sch.Schedule(name, ct, callback)
 		}
 	}
@@ -60,7 +60,7 @@ func ReScheduler() {
 				if err != nil {
 					log.Errorf("Invalid task '%s' cron: %v", name, err)
 				} else {
-					log.Infof("Reschedule Task %s: %s", name, cron)
+					log.Infof("Reschedule task %q: %s", name, cron)
 					task.Stop()
 					task.Trigger = ct
 					task.Start()
