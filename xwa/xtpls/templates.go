@@ -37,7 +37,7 @@ func Functions() tpl.FuncMap {
 	return fm
 }
 
-func newHTMLTemplates() tpl.Templates {
+func NewHTMLTemplates() tpl.Templates {
 	ht := tpl.NewHTMLTemplates()
 
 	fm := Functions()
@@ -49,7 +49,7 @@ func newHTMLTemplates() tpl.Templates {
 func InitTemplates() error {
 	dir := ini.GetString("app", "templates")
 
-	ht := newHTMLTemplates()
+	ht := NewHTMLTemplates()
 	if dir != "" {
 		absdir, err := filepath.Abs(dir)
 		if err != nil {
@@ -85,7 +85,7 @@ func ReloadTemplates() error {
 
 		log.Infof("Reloading templates from '%s'", absdir)
 
-		ht := newHTMLTemplates()
+		ht := NewHTMLTemplates()
 		if err := ht.Load(absdir); err != nil {
 			return err
 		}
@@ -100,7 +100,7 @@ func ReloadTemplates() error {
 	if dir != Dir && len(FSs) > 0 {
 		log.Info("Reloading embedded templates")
 
-		ht := newHTMLTemplates()
+		ht := NewHTMLTemplates()
 		for _, fs := range FSs {
 			if err := ht.LoadFS(fs, "."); err != nil {
 				return err
@@ -142,7 +142,7 @@ func ReloadTemplatesOnChange(path string, op string) error {
 	// reload on template file change
 	log.Infof("Reloading templates from '%s' on [%s] '%s'", absdir, op, path)
 
-	ht := newHTMLTemplates()
+	ht := NewHTMLTemplates()
 	if err := ht.Load(absdir); err != nil {
 		return err
 	}
