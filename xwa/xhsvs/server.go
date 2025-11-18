@@ -83,10 +83,7 @@ func InitServers(hh http.Handler, certs ...GetCertificate) error {
 
 // ConfigServers config http servers
 func ConfigServers() {
-	maxcon := ini.GetInt("server", "maxConnections")
-	if maxcon < 0 {
-		maxcon = 0
-	}
+	maxcon := max(ini.GetInt("server", "maxConnections"), 0)
 
 	if cap(semaphore) != maxcon {
 		semaphore = make(chan struct{}, maxcon)
