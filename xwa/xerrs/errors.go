@@ -3,6 +3,7 @@ package xerrs
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/askasoft/pango/tbs"
 )
@@ -96,6 +97,32 @@ func (fe *SkippedError) Error() string {
 
 func (fe *SkippedError) Unwrap() error {
 	return fe.Err
+}
+
+type HostnameError struct {
+	hostname string
+}
+
+func NewHostnameError(hostname string) *HostnameError {
+	return &HostnameError{hostname}
+}
+
+func AsHostnameError(err error) (he *HostnameError, ok bool) {
+	ok = errors.As(err, &he)
+	return
+}
+
+func IsHostnameError(err error) bool {
+	_, ok := AsHostnameError(err)
+	return ok
+}
+
+func (he *HostnameError) Hostname() string {
+	return he.hostname
+}
+
+func (he *HostnameError) Error() string {
+	return fmt.Sprintf("invalid host %q", he.hostname)
 }
 
 type LocaleError struct {
