@@ -18,6 +18,14 @@ type JobState struct {
 	Warning int `json:"warning,omitempty"`
 }
 
+func (js *JobState) GetStep() int {
+	return js.Step
+}
+
+func (js *JobState) SetStep(step int) {
+	js.Step = step
+}
+
 func (js *JobState) IsStepExceeded() bool {
 	return js.Total > 0 && js.Step >= js.Total
 }
@@ -68,6 +76,10 @@ func (js *JobStateLx) SetTotalLimit(total, limit int) {
 	js.Limit = gog.If(total > 0 && limit > total, total, limit)
 }
 
+func (js *JobStateLx) IsCompleted() bool {
+	return js.IsStepLimited()
+}
+
 func (js *JobStateLx) IsStepLimited() bool {
 	return js.Limit > 0 && js.Step >= js.Limit
 }
@@ -85,6 +97,10 @@ func (js *JobStateLx) Counts() string {
 
 type JobStateSx struct {
 	JobStateLx
+}
+
+func (js *JobStateSix) IsCompleted() bool {
+	return js.IsSuccessLimited()
 }
 
 func (js *JobStateSx) IsSuccessLimited() bool {
@@ -115,45 +131,93 @@ func (js *JobStateSx) Progress() string {
 	return ""
 }
 
+type JobLastID struct {
+	LastID int64 `json:"last_id,omitempty"`
+}
+
+// GetLastID get last id
+func (jl *JobLastID) GetLastID() int64 {
+	return jl.LastID
+}
+
+// SetLastID set last id
+func (jl *JobLastID) SetLastID(id int64) {
+	jl.LastID = id
+}
+
 type JobStateLix struct {
 	JobStateLx
-	LastID int64 `json:"last_id,omitempty"`
+	JobLastID
 }
 
 type JobStateSix struct {
 	JobStateSx
-	LastID int64 `json:"last_id,omitempty"`
+	JobLastID
 }
 
 type JobStateLixs struct {
-	JobStateLx
+	JobStateLix
 	LastIDs []int64 `json:"last_ids,omitempty"`
 }
 
-// InitLastID remain minimum id only
+func (jse *JobStateLixs) JobState() IState {
+	return jse
+}
+
+// InitLastID keep last minimum id
 func (jse *JobStateLixs) InitLastID() {
 	if len(jse.LastIDs) > 0 {
-		jse.LastIDs[0] = asg.Min(jse.LastIDs)
-		jse.LastIDs = jse.LastIDs[:1]
+		jse.LastID = asg.Min(jse.LastIDs)
+		jse.LastIDs = jse.LastIDs[:0]
 	}
 }
 
+// DelLastID remove id from LastIDs
+func (jse *JobStateLixs) DelLastID(id int64) {
+	jse.LastIDs = asg.DeleteEqual(jse.LastIDs, id)
+}
+
+// AddLastID increment step and add id to LastIDs
 func (jse *JobStateLixs) AddLastID(id int64) {
 	jse.Step++
+	jse.LastID = id
 	jse.LastIDs = append(jse.LastIDs, id)
 }
 
+// AddFailureID increment failure and remove id from LastIDs
 func (jse *JobStateLixs) AddFailureID(id int64) {
 	jse.IncFailure()
-	jse.LastIDs = asg.DeleteEqual(jse.LastIDs, id)
+	jse.DelLastID(id)
 }
 
+// AddSuccessID increment success and remove id from LastIDs
 func (jse *JobStateLixs) AddSuccessID(id int64) {
 	jse.IncSuccess()
-	jse.LastIDs = asg.DeleteEqual(jse.LastIDs, id)
+	jse.DelLastID(id)
 }
 
+// AddSkippedID increment skipped and remove id from LastIDs
 func (jse *JobStateLixs) AddSkippedID(id int64) {
 	jse.IncSkipped()
-	jse.LastIDs = asg.DeleteEqual(jse.LastIDs, id)
+	jse.DelLastID(id)
+}
+
+type IJobStater interface {
+	GetStep() int
+	SetTotalLimit(total, limit int)
+	CountTargets() (cnt int, err error)
+	SaveState() error
+}
+
+func InitState(js IJobStater, limit int) error {
+	if js.GetStep() == 0 {
+		total, err := js.CountTargets()
+		if err != nil {
+			return err
+		}
+
+		js.SetTotalLimit(int(total), limit)
+		return js.SaveState()
+	}
+	return nil
 }
