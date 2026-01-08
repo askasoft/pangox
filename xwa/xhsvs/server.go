@@ -120,7 +120,7 @@ func Serves() {
 	}
 }
 
-// Shutdowns gracefully shutdown the http servers with timeout '[server] shutdownTimeout' (defautl 5 seconds).
+// Shutdowns gracefully shutdown the http servers with timeout '[server] shutdownTimeout' (default 15 seconds).
 func Shutdowns() {
 	// shutdown http servers
 	var wg sync.WaitGroup
@@ -152,7 +152,7 @@ func shutdown(hsv *http.Server, wg *sync.WaitGroup) {
 
 	// The context is used to inform the server it has some seconds to finish
 	// the request it is currently handling
-	timeout := ini.GetDuration("server", "shutdownTimeout", 5*time.Second)
+	timeout := ini.GetDuration("server", "shutdownTimeout", 15*time.Second)
 	ctx, cancel := context.WithTimeout(context.TODO(), timeout)
 	defer cancel()
 
