@@ -207,7 +207,7 @@ func (jr *JobRunner) Done(err error) {
 			logger.Warn("CANCELED.")
 			return
 		default:
-			logger.Errorf("Invalid Job #%d (%d): %s", jr.JobID(), jr.RunnerID(), xjm.MustEncode(job))
+			logger.Errorf("Illegal job status %s#%d (%d): %s", jr.JobName(), jr.JobID(), jr.RunnerID(), xjm.MustEncode(job))
 			return
 		}
 	}
