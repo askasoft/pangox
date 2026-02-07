@@ -25,16 +25,8 @@ func (ida *IDArg) IDs() []int64 {
 	return ida.ids
 }
 
-func (ida *IDArg) hasValidID() bool {
+func (ida *IDArg) IsValid() bool {
 	return len(ida.ids) > 0 || ida.all
-}
-
-func (ida *IDArg) ParseID() error {
-	ida.ids, ida.all = splitIDs(ida.ID)
-	if !ida.hasValidID() {
-		return ErrInvalidID
-	}
-	return nil
 }
 
 func (ida *IDArg) Bind(c *xin.Context) error {
@@ -44,7 +36,15 @@ func (ida *IDArg) Bind(c *xin.Context) error {
 	return ida.ParseID()
 }
 
-func splitIDs(id string) ([]int64, bool) {
+func (ida *IDArg) ParseID() error {
+	ida.ids, ida.all = ida.splitIDs(ida.ID)
+	if !ida.IsValid() {
+		return ErrInvalidID
+	}
+	return nil
+}
+
+func (ida *IDArg) splitIDs(id string) ([]int64, bool) {
 	if id == "" {
 		return nil, false
 	}
@@ -72,25 +72,17 @@ type PKArg struct {
 
 func (pka *PKArg) String() string {
 	if pka.all {
-		return "[*]"
+		return "*"
 	}
-	return "[" + asg.Join(pka.pks, ",") + "]"
+	return asg.Join(pka.pks, ",")
 }
 
 func (pka *PKArg) PKs() []string {
 	return pka.pks
 }
 
-func (pka *PKArg) hasValidID() bool {
+func (pka *PKArg) IsValid() bool {
 	return len(pka.pks) > 0 || pka.all
-}
-
-func (pka *PKArg) ParseID() error {
-	pka.pks, pka.all = splitPKs(pka.ID)
-	if !pka.hasValidID() {
-		return ErrInvalidID
-	}
-	return nil
 }
 
 func (pka *PKArg) Bind(c *xin.Context) error {
@@ -100,7 +92,15 @@ func (pka *PKArg) Bind(c *xin.Context) error {
 	return pka.ParseID()
 }
 
-func splitPKs(id string) ([]string, bool) {
+func (pka *PKArg) ParseID() error {
+	pka.pks, pka.all = pka.splitPKs(pka.ID)
+	if !pka.IsValid() {
+		return ErrInvalidID
+	}
+	return nil
+}
+
+func (pka *PKArg) splitPKs(id string) ([]string, bool) {
 	if id == "" {
 		return nil, false
 	}
