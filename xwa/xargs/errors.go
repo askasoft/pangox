@@ -96,7 +96,7 @@ func TranslateBindErrors(locale string, err error, ns string, tf func(error)) {
 		for _, fe := range *ves {
 			fk := str.SnakeCase(fe.Field())
 
-			if le, ok := xerrs.AsLocaleError(fe.Cause()); ok {
+			if le, ok := fe.Cause().(xerrs.ILocaleError); ok {
 				fn := tbs.GetText(locale, ns+fk, fk)
 				em := le.LocaleError(locale)
 				tf(&ParamError{Param: fk, Label: fn, Message: em})

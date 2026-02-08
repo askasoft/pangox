@@ -125,6 +125,10 @@ func (he *HostnameError) Error() string {
 	return fmt.Sprintf("invalid host %q", he.hostname)
 }
 
+type ILocaleError interface {
+	LocaleError(loc string) string
+}
+
 type LocaleError struct {
 	name string
 	vars []any
