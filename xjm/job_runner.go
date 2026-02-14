@@ -26,7 +26,7 @@ func NewJobRunner(job *Job, xjm JobManager, logger ...log.Logger) *JobRunner {
 
 	var lw log.Writer = jr.jlw
 	if len(logger) > 0 {
-		lw = log.NewMultiWriter(jr.jlw, log.NewBridgeWriter(logger[0]))
+		lw = log.NewMultiWriter(jr.jlw, NewJobBridgeLogger(job, logger[0]))
 	}
 
 	jr.log.SetWriter(log.NewAsyncWriter(lw, 100))

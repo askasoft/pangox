@@ -1,6 +1,7 @@
 package xjm
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/askasoft/pango/log"
@@ -67,4 +68,25 @@ func (jw *JobLogWriter) flush(eb *log.EventBuffer) error {
 	}
 
 	return jw.jmr.AddJobLogs(jls)
+}
+
+type JobBridgeLogger struct {
+	job    *Job
+	logger log.Logger
+}
+
+func NewJobBridgeLogger(job *Job, logger log.Logger) *JobBridgeLogger {
+	return &JobBridgeLogger{job, logger}
+}
+
+func (jbl *JobBridgeLogger) Write(le *log.Event) {
+	jle := *le
+	jle.Message = fmt.Sprintf("job %s#%d: %s", jbl.job.Name, jbl.job.ID, le.Message)
+	jbl.logger.Write(&jle)
+}
+
+func (jbl *JobBridgeLogger) Flush() {
+}
+
+func (jbl *JobBridgeLogger) Close() {
 }

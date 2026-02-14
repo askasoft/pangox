@@ -121,28 +121,28 @@ func (jr *JobRunner) SetState(state IState) error {
 }
 
 func (jr *JobRunner) Abort(reason string) {
-	logger := jr.Log().GetLogger("JOB")
+	joblog := jr.Log().GetLogger("JOB")
 
 	if err := jr.JobRunner.Abort(reason); err != nil {
 		if !errors.Is(err, xjm.ErrJobMissing) {
-			logger.Error(err)
+			joblog.Error(err)
 		}
 	}
 
 	// Abort job chain
 	if err := jr.jobChainAbort(reason); err != nil {
-		logger.Error(err)
+		joblog.Error(err)
 	}
 
-	logger.Warn("ABORTED.")
+	joblog.Warn("ABORTED.")
 }
 
 func (jr *JobRunner) Finish() {
-	logger := jr.Log().GetLogger("JOB")
+	joblog := jr.Log().GetLogger("JOB")
 
 	if err := jr.JobRunner.Finish(); err != nil {
 		if !errors.Is(err, xjm.ErrJobMissing) {
-			logger.Error(err)
+			joblog.Error(err)
 		}
 		jr.Abort(err.Error())
 		return
@@ -150,20 +150,20 @@ func (jr *JobRunner) Finish() {
 
 	// Continue job chain
 	if err := jr.jobChainContinue(); err != nil {
-		logger.Error(err)
+		joblog.Error(err)
 	}
 
-	logger.Info("DONE.")
+	joblog.Info("DONE.")
 }
 
 func (jr *JobRunner) Done(err error) {
-	logger := jr.Log().GetLogger("JOB")
-
 	defer jr.Log().Close()
+
+	joblog := jr.Log().GetLogger("JOB")
 
 	if errors.Is(err, xjm.ErrJobCheckout) {
 		// do nothing, just log it
-		logger.Warn(err)
+		joblog.Warn(err)
 		return
 	}
 
@@ -174,14 +174,14 @@ func (jr *JobRunner) Done(err error) {
 
 	if errors.Is(err, xjm.ErrJobMissing) {
 		// job is missing, unable to do anything, just log error
-		logger.Error(err)
+		joblog.Error(err)
 		return
 	}
 
 	if errors.Is(err, xjm.ErrJobAborted) || errors.Is(err, xjm.ErrJobCanceled) || errors.Is(err, xjm.ErrJobPin) {
 		job, err := jr.GetJob()
 		if err != nil {
-			logger.Error(err)
+			joblog.Error(err)
 			return
 		}
 
@@ -191,31 +191,31 @@ func (jr *JobRunner) Done(err error) {
 			// It's necessary to call jobChainAbort() again.
 			// The jobChainCheckout()/jobChainContinue() method may update job chain status to 'R' to a aborted job chain.
 			if err := jr.jobChainAbort(job.Error); err != nil {
-				logger.Error(err)
+				joblog.Error(err)
 			}
 
-			logger.Warn("ABORTED.")
+			joblog.Warn("ABORTED.")
 			return
 		case xjm.JobStatusCanceled:
 			// NOTE:
 			// It's necessary to call jobChainCancel() again.
 			// The jobChainCheckout()/jobChainContinue() method may update job chain status to 'R' to a aborted job chain.
 			if err := jr.jobChainCancel(job.Error); err != nil {
-				logger.Error(err)
+				joblog.Error(err)
 			}
 
-			logger.Warn("CANCELED.")
+			joblog.Warn("CANCELED.")
 			return
 		default:
-			logger.Errorf("Illegal job status %s#%d (%d): %s", jr.JobName(), jr.JobID(), jr.RunnerID(), xjm.MustEncode(job))
+			joblog.Errorf("illegal job status %q", job.Status)
 			return
 		}
 	}
 
 	if xerrs.IsClientError(err) {
-		logger.Warn(err)
+		joblog.Warn(err)
 	} else {
-		logger.Error(err)
+		joblog.Error(err)
 	}
 
 	jr.Abort(err.Error())
