@@ -63,10 +63,16 @@ func safeRun(run IJobRunner) (err error) {
 	return
 }
 
+type JobContext struct {
+	context.Context
+	Cancel context.CancelCauseFunc
+}
+
 type JobRunner struct {
+	*xjm.JobRunner
+
 	xjc xjm.JobChainer
 
-	*xjm.JobRunner
 	ChainArg
 
 	JobChainContinue func(next *JobRunState) error
@@ -102,14 +108,16 @@ func (jr *JobRunner) Checkout() error {
 	return jr.jobChainCheckout()
 }
 
-func (jr *JobRunner) Running() (context.Context, context.CancelCauseFunc) {
+func (jr *JobRunner) Running() JobContext {
 	ctx, cancel := context.WithCancelCause(context.TODO())
+
 	go func() {
 		if err := jr.JobRunner.Running(ctx, time.Second, time.Minute); err != nil {
 			cancel(err)
 		}
 	}()
-	return ctx, cancel
+
+	return JobContext{ctx, cancel}
 }
 
 func (jr *JobRunner) SetState(state IState) error {

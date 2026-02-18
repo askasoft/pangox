@@ -1,13 +1,12 @@
 package xjobs
 
 import (
-	"context"
 	"errors"
+	"fmt"
 	"sync/atomic"
 	"time"
 
 	"github.com/askasoft/pango/gwp"
-	"github.com/askasoft/pango/log"
 	"github.com/askasoft/pango/ref"
 	"github.com/askasoft/pangox/xjm"
 	"github.com/askasoft/pangox/xwa/xerrs"
@@ -42,22 +41,17 @@ func (jw *JobWorker[R]) IsConcurrent() bool {
 	return jw.workerPool != nil
 }
 
-func (jw *JobWorker[R]) SubmitWork(ctx context.Context, w func()) {
+func (jw *JobWorker[R]) SubmitWork(ctx JobContext, w func()) {
 	jw.workerWait.Add(1)
 	jw.workerPool.Submit(func() {
 		defer func() {
 			jw.workerWait.Add(-1)
-			if err := recover(); err != nil {
-				log.Errorf("Panic in JobWorker (%s): %v", ref.NameOfFunc(w), err)
+			if r := recover(); r != nil {
+				ctx.Cancel(fmt.Errorf("%s: %w", ref.NameOfFunc(w), xerrs.PanicError(r)))
 			}
 		}()
 
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			w()
-		}
+		w()
 	})
 }
 
@@ -87,27 +81,34 @@ func (jw *JobWorker[R]) WaitAndProcessResults(fp func(R) error) (err error) {
 type IJobRun[T any] interface {
 	FindTargets() ([]T, error)
 	IsCompleted() bool
-	Running() (context.Context, context.CancelCauseFunc)
+	Running() JobContext
 }
 
 type IStreamRun[T any] interface {
 	IJobRun[T]
-	StreamHandle(ctx context.Context, a T) error
+	StreamHandle(ctx JobContext, a T) error
 }
 
-func StreamRun[T any](sr IStreamRun[T]) error {
-	ctx, cancel := sr.Running()
-	defer cancel(nil)
+func StreamRun[T any](sr IStreamRun[T]) (err error) {
+	ctx := sr.Running()
+	defer ctx.Cancel(nil)
 
-	err := streamRun(ctx, sr)
+	defer func() {
+		if r := recover(); r != nil {
+			err = xerrs.PanicError(r)
+		}
+	}()
+
+	err = streamRun(ctx, sr)
 	if err != nil {
-		cancel(err)
+		ctx.Cancel(err)
 	}
 
-	return xerrs.ContextCause(ctx, err)
+	err = xerrs.ContextCause(ctx, err)
+	return
 }
 
-func streamRun[T any](ctx context.Context, sr IStreamRun[T]) error {
+func streamRun[T any](ctx JobContext, sr IStreamRun[T]) error {
 	for {
 		ts, err := sr.FindTargets()
 		if err != nil {
@@ -144,12 +145,12 @@ type ISubmitRun[T any, R any] interface {
 	WaitAndProcessResults(func(R) error) error
 
 	ProcessResult(r R) error
-	SubmitHandle(ctx context.Context, a T) error
+	SubmitHandle(ctx JobContext, a T) error
 }
 
 func SubmitRun[T any, R any](sr ISubmitRun[T, R]) error {
-	ctx, cancel := sr.Running()
-	defer cancel(nil)
+	ctx := sr.Running()
+	defer ctx.Cancel(nil)
 
 	err := submitRun(ctx, sr)
 	if err == nil || errors.Is(err, xjm.ErrJobComplete) {
@@ -157,17 +158,17 @@ func SubmitRun[T any, R any](sr ISubmitRun[T, R]) error {
 			err = er
 		}
 		if err != nil {
-			cancel(err)
+			ctx.Cancel(err)
 		}
 	} else {
-		cancel(err)
+		ctx.Cancel(err)
 		_ = sr.WaitAndProcessResults(sr.ProcessResult)
 	}
 
 	return xerrs.ContextCause(ctx, err)
 }
 
-func submitRun[T any, R any](ctx context.Context, sr ISubmitRun[T, R]) error {
+func submitRun[T any, R any](ctx JobContext, sr ISubmitRun[T, R]) error {
 	for {
 		ts, err := sr.FindTargets()
 		if err != nil {
@@ -186,19 +187,15 @@ func submitRun[T any, R any](ctx context.Context, sr ISubmitRun[T, R]) error {
 			if sr.IsCompleted() {
 				return xjm.ErrJobComplete
 			}
-
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			default:
-			}
 		}
 	}
 }
 
-func submitTarget[T any, R any](ctx context.Context, a T, sr ISubmitRun[T, R]) error {
+func submitTarget[T any, R any](ctx JobContext, a T, sr ISubmitRun[T, R]) error {
 	for {
 		select {
+		case <-ctx.Done():
+			return ctx.Err()
 		case r := <-sr.ResultChan():
 			if err := sr.ProcessResult(r); err != nil {
 				return err

@@ -8,6 +8,13 @@ import (
 	"github.com/askasoft/pango/tbs"
 )
 
+func PanicError(r any) error {
+	if err, ok := r.(error); ok {
+		return err
+	}
+	return fmt.Errorf("panic: %v", r)
+}
+
 func ContextCause(ctx context.Context, errs ...error) error {
 	for _, err := range errs {
 		if err != nil && !errors.Is(err, context.Canceled) {
