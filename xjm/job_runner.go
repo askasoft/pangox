@@ -97,15 +97,15 @@ func (jr *JobRunner) Finish() error {
 	return jr.xjm.FinishJob(jr.job.ID)
 }
 
-func (jr *JobRunner) Pin() error {
+func (jr *JobRunner) PinJob() error {
 	return jr.xjm.PinJob(jr.job.ID, jr.job.RID)
 }
 
-func (jr *JobRunner) Running(ctx context.Context, getTimeout, pinTimeout time.Duration) error {
-	gettm, pintm := time.NewTimer(getTimeout), time.NewTimer(pinTimeout)
+func (jr *JobRunner) Running(ctx context.Context, checkInterval, pinInterval time.Duration) error {
+	chktm, pintm := time.NewTimer(checkInterval), time.NewTimer(pinInterval)
 
 	defer func() {
-		gettm.Stop()
+		chktm.Stop()
 		pintm.Stop()
 	}()
 
@@ -113,7 +113,7 @@ func (jr *JobRunner) Running(ctx context.Context, getTimeout, pinTimeout time.Du
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case <-gettm.C:
+		case <-chktm.C:
 			job, err := jr.GetJob("id", "rid", "status")
 			if err != nil {
 				return err
@@ -121,12 +121,12 @@ func (jr *JobRunner) Running(ctx context.Context, getTimeout, pinTimeout time.Du
 			if job.RID != jr.job.RID || job.Status != JobStatusRunning {
 				return ErrJobPin
 			}
-			gettm.Reset(getTimeout)
+			chktm.Reset(checkInterval)
 		case <-pintm.C:
-			if err := jr.Pin(); err != nil {
+			if err := jr.PinJob(); err != nil {
 				return err
 			}
-			pintm.Reset(pinTimeout)
+			pintm.Reset(pinInterval)
 		}
 	}
 }

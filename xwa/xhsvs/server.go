@@ -153,7 +153,7 @@ func shutdown(hsv *http.Server, wg *sync.WaitGroup) {
 	// The context is used to inform the server it has some seconds to finish
 	// the request it is currently handling
 	timeout := ini.GetDuration("server", "shutdownTimeout", 15*time.Second)
-	ctx, cancel := context.WithTimeout(context.TODO(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	log.Infof("HTTP Server %s shutting down in %v ...", hsv.Addr, timeout)

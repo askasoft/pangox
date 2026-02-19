@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/askasoft/pango/ini"
 	"github.com/askasoft/pango/log"
 	"github.com/askasoft/pangox/xjm"
 	"github.com/askasoft/pangox/xwa/xerrs"
@@ -109,10 +110,13 @@ func (jr *JobRunner) Checkout() error {
 }
 
 func (jr *JobRunner) Running() JobContext {
-	ctx, cancel := context.WithCancelCause(context.TODO())
+	ctx, cancel := context.WithCancelCause(context.Background())
 
 	go func() {
-		if err := jr.JobRunner.Running(ctx, time.Second, time.Minute); err != nil {
+		chkiv := ini.GetDuration("job", "jobCheckInterval", time.Second)
+		piniv := ini.GetDuration("job", "jobPinInterval", time.Minute)
+
+		if err := jr.JobRunner.Running(ctx, chkiv, piniv); err != nil {
 			cancel(err)
 		}
 	}()
