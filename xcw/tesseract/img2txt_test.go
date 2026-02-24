@@ -36,18 +36,18 @@ func testSkip(t *testing.T) {
 func TestImgFileTextifyString(t *testing.T) {
 	testSkip(t)
 
-	cs := []string{"jpn.jpg"}
+	cs := []string{"jpn.jpg", "jpn+eng.png"}
 
 	for i, c := range cs {
 		ln := str.SubstrBeforeByte(c, '.')
 		fn := testFilename(c)
-		a, err := ImgFileTextifyString(context.Background(), fn, ln)
+		a, err := ImgFileTextifyString(context.Background(), fn, "-l", ln)
 		if err != nil {
 			t.Errorf("[%d] ImgFileTextifyString(%s): %v\n", i, fn, err)
 		} else {
 			w := string(testReadFile(t, c+".txt"))
 
-			a = str.RemoveByte(a, '\r')
+			a = str.Strip(str.RemoveByte(a, '\r'))
 			if w != a {
 				t.Errorf("[%d] ImgFileTextifyString(%s):\nACTUAL: %q\n  WANT: %q\n", i, fn, a, w)
 				fsu.WriteString(fn+".out", a, fsu.FileMode(0660))
@@ -61,7 +61,7 @@ func TestImgFileTextifyString(t *testing.T) {
 func TestImgReaderTextify(t *testing.T) {
 	testSkip(t)
 
-	cs := []string{"jpn.jpg"}
+	cs := []string{"jpn.jpg", "jpn+eng.png"}
 
 	for i, c := range cs {
 		ln := str.SubstrBeforeByte(c, '.')
@@ -74,14 +74,14 @@ func TestImgReaderTextify(t *testing.T) {
 		defer fr.Close()
 
 		bw := &bytes.Buffer{}
-		err = ImgReaderTextify(context.Background(), bw, fr, ln)
+		err = ImgReaderTextify(context.Background(), bw, fr, "-l", ln)
 		if err != nil {
 			t.Errorf("[%d] ImgReaderTextify(%s): %v\n", i, fn, err)
 			continue
 		}
 
 		w := string(testReadFile(t, c+".txt"))
-		a := str.RemoveByte(bw.String(), '\r')
+		a := str.Strip(str.RemoveByte(bw.String(), '\r'))
 		if w != a {
 			t.Errorf("[%d] ImgReaderTextify(%s):\nACTUAL: %q\n  WANT: %q\n", i, fn, a, w)
 			fsu.WriteString(fn+".out", a, fsu.FileMode(0660))
@@ -98,7 +98,7 @@ func TestImgFileTextifyBad(t *testing.T) {
 
 	for i, c := range cs {
 		fn := testFilename(c)
-		txt, err := ImgFileTextifyString(context.Background(), fn, "jpn")
+		txt, err := ImgFileTextifyString(context.Background(), fn, "-l", "jpn")
 		if err == nil {
 			t.Fatalf("Expected error for ImgFileTextifyString(%s), got nil", fn)
 		}
