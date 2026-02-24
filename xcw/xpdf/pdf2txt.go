@@ -43,17 +43,17 @@ import (
 
 // PdfFileTextifyString Extract pdf file to string
 // options: see "pdftotext -h"
-func PdfFileTextifyString(ctx context.Context, name string, options ...string) (string, error) {
+func PdfFileTextifyString(ctx context.Context, pdffile string, options ...string) (string, error) {
 	bw := &bytes.Buffer{}
-	err := PdfFileTextify(ctx, bw, name, options...)
+	err := PdfFileTextify(ctx, bw, pdffile, options...)
 	return bw.String(), err
 }
 
 // PdfFileTextify Extract pdf file to writer
 // options: see "pdftotext -h"
-func PdfFileTextify(ctx context.Context, w io.Writer, name string, options ...string) error {
+func PdfFileTextify(ctx context.Context, w io.Writer, pdffile string, options ...string) error {
 	se := &strings.Builder{}
-	args := buildPdfToTextArgs(name, options...)
+	args := buildPdfToTextArgs(pdffile, options...)
 	cmd := exec.CommandContext(ctx, "pdftotext", args...)
 	cmd.Stdout = w
 	cmd.Stderr = se

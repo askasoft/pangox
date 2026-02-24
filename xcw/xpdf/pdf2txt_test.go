@@ -26,7 +26,7 @@ func testReadFile(t *testing.T, name string) []byte {
 	return bs
 }
 
-func testSkip(t *testing.T) {
+func testCheckPdfToText(t *testing.T) {
 	path, err := exec.LookPath("pdftotext")
 	if path == "" || err != nil {
 		t.Skip("Failed to find pdftotext", path, err)
@@ -34,7 +34,7 @@ func testSkip(t *testing.T) {
 }
 
 func TestPdfFileTextifyString(t *testing.T) {
-	testSkip(t)
+	testCheckPdfToText(t)
 
 	cs := []string{"hello.pdf", "table.pdf"}
 
@@ -42,7 +42,7 @@ func TestPdfFileTextifyString(t *testing.T) {
 		fn := testFilename(c)
 		a, err := PdfFileTextifyString(context.Background(), fn, "-layout")
 		if err != nil {
-			fmt.Printf("[%d] PdfFileTextifyString(%s): %v\n", i, fn, err)
+			t.Errorf("[%d] PdfFileTextifyString(%s): %v\n", i, fn, err)
 		} else {
 			w := string(testReadFile(t, c+".txt"))
 
@@ -58,7 +58,7 @@ func TestPdfFileTextifyString(t *testing.T) {
 }
 
 func TestPdfReaderTextify(t *testing.T) {
-	testSkip(t)
+	testCheckPdfToText(t)
 
 	cs := []string{"hello.pdf", "table.pdf"}
 
@@ -74,7 +74,7 @@ func TestPdfReaderTextify(t *testing.T) {
 		bw := &bytes.Buffer{}
 		err = PdfReaderTextify(context.Background(), bw, fr, "-layout")
 		if err != nil {
-			fmt.Printf("[%d] PdfReaderTextify(%s): %v\n", i, fn, err)
+			t.Errorf("[%d] PdfReaderTextify(%s): %v\n", i, fn, err)
 			continue
 		}
 
@@ -83,14 +83,14 @@ func TestPdfReaderTextify(t *testing.T) {
 		if w != a {
 			t.Errorf("[%d] PdfReaderTextify(%s):\nACTUAL: %q\n  WANT: %q\n", i, fn, a, w)
 			fsu.WriteString(fn+".out", a, fsu.FileMode(0660))
-		} else {
-			os.Remove(fn + ".out")
+			continue
 		}
+		os.Remove(fn + ".out")
 	}
 }
 
 func TestPdfFileTextifyBad(t *testing.T) {
-	testSkip(t)
+	testCheckPdfToText(t)
 
 	cs := []string{"bad.pdf"}
 
