@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/askasoft/pango/asg"
 	"github.com/askasoft/pango/log"
 	"github.com/askasoft/pango/sqx"
 	"github.com/askasoft/pango/sqx/sqlx"
@@ -14,11 +13,10 @@ import (
 )
 
 func getLogger(loggers ...log.Logger) log.Logger {
-	logger := asg.First(loggers)
-	if logger == nil {
-		logger = log.GetLogger("SQL")
+	if len(loggers) > 0 {
+		return loggers[0]
 	}
-	return logger
+	return log.GetLogger("SQL")
 }
 
 func ExecSQL(db *sqlx.DB, schema, sqls string, loggers ...log.Logger) error {

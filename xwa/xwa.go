@@ -197,15 +197,17 @@ func LoadConfigs() (*ini.Ini, error) {
 }
 
 func MakeFileID(prefix, name string) string {
-	fid := "/" + prefix + time.Now().Format("/2006/0102/") + num.Ltoa(Sequencer.NextID().Int64()) + "/"
+	dir := "/" + prefix + time.Now().Format("/2006/0102/") + num.Ltoa(Sequencer.NextID().Int64()) + "/"
 
 	_, name = filepath.Split(name)
 	name = str.RemoveAny(name, `\/:*?"<>|`)
+	if name == "" {
+		name = "noname.tmp"
+	}
 
 	ext := filepath.Ext(name)
 	name = name[:len(name)-len(ext)] + str.ToLower(ext)
-	name = str.Right(name, 255-len(fid))
+	name = str.Right(name, 255-len(dir))
 
-	fid += name
-	return fid
+	return dir + name
 }
