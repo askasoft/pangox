@@ -9,11 +9,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/askasoft/pango/asg"
 	"github.com/askasoft/pango/ini"
 	"github.com/askasoft/pango/log"
 	"github.com/askasoft/pango/net/netx"
 	"github.com/askasoft/pango/str"
+	"github.com/askasoft/pangox/xwa/xcert"
 )
 
 var (
@@ -33,10 +33,8 @@ var (
 	HSVs []*http.Server
 )
 
-type GetCertificate func(*tls.ClientHelloInfo) (*tls.Certificate, error)
-
 // InitServers initialize TCP listeners and HTTP servers
-func InitServers(hh http.Handler, certs ...GetCertificate) error {
+func InitServers(hh http.Handler) error {
 	listen := ini.GetString("server", "listen")
 
 	for _, addr := range str.Fields(listen) {
@@ -61,14 +59,7 @@ func InitServers(hh http.Handler, certs ...GetCertificate) error {
 		}
 
 		if ssl {
-			cert, ok := asg.FindFunc(certs, func(c GetCertificate) bool { return c != nil })
-			if !ok {
-				return errors.New("xhsvs: nil TLS certificate function")
-			}
-
-			hsv.TLSConfig = &tls.Config{
-				GetCertificate: cert,
-			}
+			hsv.TLSConfig = xcert.TLSConfig
 		}
 
 		TCPs = append(TCPs, tcp)
@@ -132,10 +123,11 @@ func Shutdowns() {
 }
 
 func serve(hsv *http.Server, tcp net.Listener) {
-	log.Infof("HTTP Serving %s ...", hsv.Addr)
-
 	if hsv.TLSConfig != nil {
 		tcp = tls.NewListener(tcp, hsv.TLSConfig)
+		log.Infof("HTTPs Serving %s ...", hsv.Addr)
+	} else {
+		log.Infof("HTTP Serving %s ...", hsv.Addr)
 	}
 
 	if err := hsv.Serve(tcp); err != nil {
