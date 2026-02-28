@@ -112,7 +112,7 @@ func InitLogs() error {
 
 	log.SetProp("VERSION", Version)
 	log.SetProp("REVISION", Revision)
-	golog.SetOutput(log.GetOutputer("std", log.LevelInfo, 2))
+	golog.SetOutput(log.GetOutputer("std", log.LevelInfo, log.StdLogCallerSkip))
 
 	log.Info("Initializing ...")
 	log.Infof("Runtime    : %s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH)
