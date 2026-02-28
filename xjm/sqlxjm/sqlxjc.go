@@ -138,54 +138,36 @@ func (sjc *sjc) UpdateJobChain(cid int64, status string, states ...string) error
 
 	sql, args := sqb.Build()
 
-	r, err := sjc.db.Exec(sql, args...)
+	cnt, err := sjc.db.Update(sql, args...)
 	if err != nil {
 		return err
 	}
 
-	c, err := r.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if c != 1 {
+	if cnt != 1 {
 		return xjm.ErrJobChainMissing
 	}
 	return nil
 }
 
-func (sjc *sjc) DeleteJobChains(cids ...int64) (cnt int64, err error) {
+func (sjc *sjc) DeleteJobChains(cids ...int64) (int64, error) {
 	if len(cids) == 0 {
-		return
+		return 0, nil
 	}
 
 	sqb := sjc.db.Builder()
 	sqb.Delete(sjc.tb)
 	sqb.In("id", cids)
-
 	sql, args := sqb.Build()
 
-	var r sqlx.Result
-	if r, err = sjc.db.Exec(sql, args...); err != nil {
-		return
-	}
-
-	cnt, err = r.RowsAffected()
-	return
+	return sjc.db.Update(sql, args...)
 }
 
-func (sjc *sjc) CleanOutdatedJobChains(before time.Time) (cnt int64, err error) {
+func (sjc *sjc) CleanOutdatedJobChains(before time.Time) (int64, error) {
 	sqb := sjc.db.Builder()
 	sqb.Delete(sjc.tb)
 	sqb.Where("updated_at < ?", before)
 	sqb.In("status", xjm.JobDoneStatus)
-
 	sql, args := sqb.Build()
 
-	var r sqlx.Result
-	if r, err = sjc.db.Exec(sql, args...); err != nil {
-		return
-	}
-
-	cnt, err = r.RowsAffected()
-	return
+	return sjc.db.Update(sql, args...)
 }

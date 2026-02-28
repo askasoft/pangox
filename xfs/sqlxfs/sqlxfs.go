@@ -89,17 +89,12 @@ func (sfs *sfs) SaveFile(id string, filename string, filetime time.Time, data []
 	}
 	sql, args := sqb.Build()
 
-	r, err := sfs.db.Exec(sql, args...)
+	cnt, err := sfs.db.Update(sql, args...)
 	if err != nil {
 		return fi, err
 	}
 
-	n, err := r.RowsAffected()
-	if err != nil {
-		return fi, err
-	}
-
-	if n != 1 {
+	if cnt != 1 {
 		return fi, fs.ErrNotExist
 	}
 	return fi, nil
@@ -137,16 +132,12 @@ func (sfs *sfs) CopyFile(src, dst string, tag ...string) error {
 	}
 	sql = sfs.db.Rebind(sql)
 
-	r, err := sfs.db.Exec(sql, args...)
+	cnt, err := sfs.db.Update(sql, args...)
 	if err != nil {
 		return err
 	}
 
-	ra, err := r.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if ra == 0 {
+	if cnt == 0 {
 		return fs.ErrNotExist
 	}
 	return nil
@@ -162,16 +153,12 @@ func (sfs *sfs) MoveFile(src, dst string, tag ...string) error {
 	sqb.Where("id = ?", src)
 	sql, args := sqb.Build()
 
-	r, err := sfs.db.Exec(sql, args...)
+	cnt, err := sfs.db.Update(sql, args...)
 	if err != nil {
 		return err
 	}
 
-	ra, err := r.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if ra == 0 {
+	if cnt == 0 {
 		return fs.ErrNotExist
 	}
 	return nil
@@ -212,21 +199,13 @@ func (sfs *sfs) DeleteTaggedBefore(tag string, before time.Time) (int64, error) 
 }
 
 func (sfs *sfs) DeleteWhere(where string, args ...any) (int64, error) {
-	s := sfs.db.Rebind("DELETE FROM " + sfs.db.Quote(sfs.tb) + " WHERE " + where)
-	r, err := sfs.db.Exec(s, args...)
-	if err != nil {
-		return 0, err
-	}
-	return r.RowsAffected()
+	sql := sfs.db.Rebind("DELETE FROM " + sfs.db.Quote(sfs.tb) + " WHERE " + where)
+	return sfs.db.Update(sql, args...)
 }
 
 // DeleteAll use "DELETE FROM files" to delete all files
 func (sfs *sfs) DeleteAll() (int64, error) {
-	r, err := sfs.db.Exec("DELETE FROM " + sfs.db.Quote(sfs.tb))
-	if err != nil {
-		return 0, err
-	}
-	return r.RowsAffected()
+	return sfs.db.Update("DELETE FROM " + sfs.db.Quote(sfs.tb))
 }
 
 // Truncate use "TRUNCATE TABLE files" to truncate files

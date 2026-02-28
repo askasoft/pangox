@@ -90,12 +90,11 @@ func ExecSQL(db *sqlx.DB, schema, sqls string, loggers ...log.Logger) error {
 
 				logger.Infof("#%d [%d] = %s\n%s", i, cnt, sqs, sb.String())
 			} else {
-				r, err := tx.Exec(sqs)
+				cnt, err := tx.Update(sqs)
 				if err != nil {
 					return err
 				}
 
-				cnt, _ := r.RowsAffected()
 				logger.Infof("#%d [%d] = %s", i, cnt, sqs)
 			}
 		}

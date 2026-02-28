@@ -209,16 +209,12 @@ func (sjm *sjm) abortCancelJob(jid int64, status, reason string) error {
 
 	sql, args := sqb.Build()
 
-	r, err := sjm.db.Exec(sql, args...)
+	cnt, err := sjm.db.Update(sql, args...)
 	if err != nil {
 		return err
 	}
 
-	c, err := r.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if c != 1 {
+	if cnt != 1 {
 		return xjm.ErrJobMissing
 	}
 	return nil
@@ -235,16 +231,12 @@ func (sjm *sjm) FinishJob(jid int64) error {
 
 	sql, args := sqb.Build()
 
-	r, err := sjm.db.Exec(sql, args...)
+	cnt, err := sjm.db.Update(sql, args...)
 	if err != nil {
 		return err
 	}
 
-	c, err := r.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if c != 1 {
+	if cnt != 1 {
 		return xjm.ErrJobMissing
 	}
 	return nil
@@ -263,16 +255,12 @@ func (sjm *sjm) CheckoutJob(jid, rid int64) error {
 
 	sql, args := sqb.Build()
 
-	r, err := sjm.db.Exec(sql, args...)
+	cnt, err := sjm.db.Update(sql, args...)
 	if err != nil {
 		return err
 	}
 
-	c, err := r.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if c != 1 {
+	if cnt != 1 {
 		return xjm.ErrJobCheckout
 	}
 	return nil
@@ -289,16 +277,12 @@ func (sjm *sjm) PinJob(jid, rid int64) error {
 
 	sql, args := sqb.Build()
 
-	r, err := sjm.db.Exec(sql, args...)
+	cnt, err := sjm.db.Update(sql, args...)
 	if err != nil {
 		return err
 	}
 
-	c, err := r.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if c != 1 {
+	if cnt != 1 {
 		return xjm.ErrJobPin
 	}
 	return nil
@@ -315,16 +299,12 @@ func (sjm *sjm) SetJobState(jid, rid int64, state string) error {
 
 	sql, args := sqb.Build()
 
-	r, err := sjm.db.Exec(sql, args...)
+	cnt, err := sjm.db.Update(sql, args...)
 	if err != nil {
 		return err
 	}
 
-	c, err := r.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if c != 1 {
+	if cnt != 1 {
 		return xjm.ErrJobMissing
 	}
 	return nil
@@ -341,16 +321,12 @@ func (sjm *sjm) AddJobResult(jid, rid int64, result string) error {
 
 	sql, args := sqb.Build()
 
-	r, err := sjm.db.Exec(sql, args...)
+	cnt, err := sjm.db.Update(sql, args...)
 	if err != nil {
 		return err
 	}
 
-	c, err := r.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if c != 1 {
+	if cnt != 1 {
 		return xjm.ErrJobMissing
 	}
 	return nil
@@ -369,12 +345,7 @@ func (sjm *sjm) ReappendJobs(before time.Time) (int64, error) {
 
 	sql, args := sqb.Build()
 
-	r, err := sjm.db.Exec(sql, args...)
-	if err != nil {
-		return 0, err
-	}
-
-	return r.RowsAffected()
+	return sjm.db.Update(sql, args...)
 }
 
 func (sjm *sjm) StartJobs(limit int, start func(*xjm.Job)) error {
@@ -412,27 +383,18 @@ func (sjm *sjm) DeleteJobs(jids ...int64) (jobs int64, logs int64, err error) {
 	sqa := sjm.db.Builder()
 	sqa.Delete(sjm.lt)
 	sqa.In("jid", jids)
-
 	sql, args := sqa.Build()
 
-	var r sqlx.Result
-	if r, err = sjm.db.Exec(sql, args...); err != nil {
-		return
-	}
-	if logs, err = r.RowsAffected(); err != nil {
+	if logs, err = sjm.db.Update(sql, args...); err != nil {
 		return
 	}
 
 	sqb := sjm.db.Builder()
 	sqb.Delete(sjm.jt)
 	sqb.In("id", jids)
-
 	sql, args = sqb.Build()
-	if r, err = sjm.db.Exec(sql, args...); err != nil {
-		return
-	}
 
-	jobs, err = r.RowsAffected()
+	jobs, err = sjm.db.Update(sql, args...)
 	return
 }
 
@@ -445,24 +407,15 @@ func (sjm *sjm) CleanOutdatedJobs(before time.Time) (jobs int64, logs int64, err
 	sqa := sjm.db.Builder()
 	sqa.Delete(sjm.lt)
 	sqa.Where("jid IN ("+sqb.SQL()+")", sqb.Params()...)
-
 	sql, args := sqa.Build()
 
-	var r sqlx.Result
-	if r, err = sjm.db.Exec(sql, args...); err != nil {
-		return
-	}
-	if logs, err = r.RowsAffected(); err != nil {
+	if logs, err = sjm.db.Update(sql, args...); err != nil {
 		return
 	}
 
 	sqb.Delete(sjm.jt)
-
 	sql, args = sqb.Build()
-	if r, err = sjm.db.Exec(sql, args...); err != nil {
-		return
-	}
 
-	jobs, err = r.RowsAffected()
+	jobs, err = sjm.db.Update(sql, args...)
 	return
 }

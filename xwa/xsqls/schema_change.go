@@ -93,12 +93,11 @@ func applyScript(db *sqlx.DB, schema string, fsys fs.FS, dir, script string, log
 				return err
 			}
 
-			r, err := tx.Exec(sqs)
+			cnt, err := tx.Update(sqs)
 			if err != nil {
 				return err
 			}
 
-			cnt, _ := r.RowsAffected()
 			logger.Debugf("#%d [%d] = %s", i, cnt, sqs)
 		}
 
