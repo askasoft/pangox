@@ -196,14 +196,21 @@ func LoadConfigs() (*ini.Ini, error) {
 	return c, nil
 }
 
+// MakeFileID use Sequencer to generate file ID
 func MakeFileID(prefix, name string) string {
 	dir := "/" + prefix + time.Now().Format("/2006/0102/") + num.Ltoa(Sequencer.NextID().Int64()) + "/"
 
-	_, name = filepath.Split(name)
-	name = str.RemoveAny(name, `\/:*?"<>|`)
-	if name == "" {
-		name = "noname.tmp"
+	return MakeFilePath(dir, name)
+}
+
+// MakeFilePath remove illegal runes of file name and return "dir/name" limit length to 255.
+func MakeFilePath(dir, name string) string {
+	if !str.EndsWithByte(dir, '/') {
+		dir += "/"
 	}
+
+	_, name = filepath.Split(name)
+	name = str.IfEmpty(str.RemoveAny(name, `\/:*?"<>|`), "noname.tmp")
 
 	ext := filepath.Ext(name)
 	name = name[:len(name)-len(ext)] + str.ToLower(ext)
