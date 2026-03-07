@@ -14,7 +14,7 @@ func (ws Wildcards) String() string {
 
 func (ws Wildcards) StartsWith(v string) bool {
 	if len(ws) == 0 {
-		return false
+		return true
 	}
 
 	f := func(s string) bool {
@@ -25,7 +25,7 @@ func (ws Wildcards) StartsWith(v string) bool {
 
 func (ws Wildcards) StartsWithAny(vs ...string) bool {
 	if len(ws) == 0 {
-		return false
+		return true
 	}
 
 	f := func(s string) bool {
@@ -38,7 +38,7 @@ func (ws Wildcards) StartsWithAny(vs ...string) bool {
 
 func (ws Wildcards) Match(v string) bool {
 	if len(ws) == 0 {
-		return false
+		return true
 	}
 
 	f := func(s string) bool {
@@ -49,7 +49,7 @@ func (ws Wildcards) Match(v string) bool {
 
 func (ws Wildcards) MatchAny(vs ...string) bool {
 	if len(ws) == 0 {
-		return false
+		return true
 	}
 
 	f := func(s string) bool {
