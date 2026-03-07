@@ -125,13 +125,24 @@ func AddILike(sqb *sqlx.Builder, col string, val string) {
 }
 
 func AddDateRange(sqb *sqlx.Builder, col string, tmin, tmax time.Time) {
-	if !tmin.IsZero() {
-		tmin = tmu.TruncateHours(tmin)
-	}
-	if !tmax.IsZero() {
+	switch {
+	case tmin.IsZero() && tmax.IsZero():
+	case tmin.IsZero():
 		tmax = tmu.TruncateHours(tmax).Add(time.Hour * 24)
+		sqb.Lt(col, tmax)
+	case tmax.IsZero():
+		tmin = tmu.TruncateHours(tmin)
+		sqb.Gte(col, tmin)
+	case tmin.After(tmax):
+		tmin, tmax = tmax, tmin
+		tmin = tmu.TruncateHours(tmin)
+		tmax = tmu.TruncateHours(tmax).Add(time.Hour*24 - time.Nanosecond)
+		sqb.Btw(col, tmin, tmax)
+	default:
+		tmin = tmu.TruncateHours(tmin)
+		tmax = tmu.TruncateHours(tmax).Add(time.Hour*24 - time.Nanosecond)
+		sqb.Btw(col, tmin, tmax)
 	}
-	AddTimeRange(sqb, col, tmin, tmax)
 }
 
 func AddTimeRange(sqb *sqlx.Builder, col string, tmin, tmax time.Time) {
@@ -141,15 +152,12 @@ func AddTimeRange(sqb *sqlx.Builder, col string, tmin, tmax time.Time) {
 		sqb.Lte(col, tmax)
 	case tmax.IsZero():
 		sqb.Gte(col, tmin)
+	case tmin.Before(tmax):
+		sqb.Btw(col, tmin, tmax)
+	case tmin.After(tmax):
+		sqb.Btw(col, tmax, tmin)
 	default:
-		switch {
-		case tmin.Before(tmax):
-			sqb.Btw(col, tmin, tmax)
-		case tmin.After(tmax):
-			sqb.Btw(col, tmax, tmin)
-		default:
-			sqb.Eq(col, tmin)
-		}
+		sqb.Eq(col, tmin)
 	}
 }
 
