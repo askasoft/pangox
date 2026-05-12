@@ -30,19 +30,31 @@ func (js *JobState) IsStepExceeded() bool {
 	return js.Total > 0 && js.Step >= js.Total
 }
 
+func (js *JobState) AddSkipped(cnt int) {
+	js.Count += cnt
+	js.Skipped += cnt
+}
+
+func (js *JobState) AddSuccess(cnt int) {
+	js.Count += cnt
+	js.Success += cnt
+}
+
+func (js *JobState) AddFailure(cnt int) {
+	js.Count += cnt
+	js.Failure += cnt
+}
+
 func (js *JobState) IncSkipped() {
-	js.Count++
-	js.Skipped++
+	js.AddSkipped(1)
 }
 
 func (js *JobState) IncSuccess() {
-	js.Count++
-	js.Success++
+	js.AddSuccess(1)
 }
 
 func (js *JobState) IncFailure() {
-	js.Count++
-	js.Failure++
+	js.AddFailure(1)
 }
 
 func (js *JobState) Progress() string {
@@ -99,20 +111,8 @@ type JobStateSx struct {
 	JobStateLx
 }
 
-func (js *JobStateSix) IsCompleted() bool {
-	return js.IsSuccessLimited()
-}
-
 func (js *JobStateSx) IsSuccessLimited() bool {
 	return js.Limit > 0 && js.Success >= js.Limit
-}
-
-func (js *JobStateSx) IncSkipped() {
-	js.Skipped++
-}
-
-func (js *JobStateSx) IncFailure() {
-	js.Failure++
 }
 
 func (js *JobStateSx) Progress() string {
@@ -153,6 +153,10 @@ type JobStateLix struct {
 type JobStateSix struct {
 	JobStateSx
 	JobLastID
+}
+
+func (js *JobStateSix) IsCompleted() bool {
+	return js.IsSuccessLimited()
 }
 
 type JobStateLixs struct {

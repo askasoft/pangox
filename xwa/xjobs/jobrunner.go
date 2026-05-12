@@ -109,7 +109,7 @@ func (jr *JobRunner) Checkout() error {
 	return jr.jobChainCheckout()
 }
 
-func (jr *JobRunner) Running() JobContext {
+func (jr *JobRunner) Start() JobContext {
 	ctx, cancel := context.WithCancelCause(context.Background())
 
 	go func() {

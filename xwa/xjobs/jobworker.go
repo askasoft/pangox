@@ -55,7 +55,7 @@ func (jw *JobWorker[R]) SubmitWork(ctx JobContext, w func()) {
 	})
 }
 
-func (jw *JobWorker[R]) WaitAndProcessResults(fp func(R) error) (err error) {
+func (jw *JobWorker[R]) WaitAndProcessResults(ctx JobContext, fp func(JobContext, R) error) (err error) {
 	timer := time.NewTimer(time.Millisecond * 100)
 	defer timer.Stop()
 
@@ -65,7 +65,7 @@ func (jw *JobWorker[R]) WaitAndProcessResults(fp func(R) error) (err error) {
 			if !ok {
 				return
 			}
-			if er := fp(r); er != nil {
+			if er := fp(ctx, r); er != nil {
 				err = er
 			}
 		case <-timer.C:
@@ -81,7 +81,7 @@ func (jw *JobWorker[R]) WaitAndProcessResults(fp func(R) error) (err error) {
 type IJobRun[T any] interface {
 	FindTargets() ([]T, error)
 	IsCompleted() bool
-	Running() JobContext
+	Start() JobContext
 }
 
 type IStreamRun[T any] interface {
@@ -90,7 +90,7 @@ type IStreamRun[T any] interface {
 }
 
 func StreamRun[T any](sr IStreamRun[T]) (err error) {
-	ctx := sr.Running()
+	ctx := sr.Start()
 	defer ctx.Cancel(nil)
 
 	defer func() {
@@ -110,6 +110,12 @@ func StreamRun[T any](sr IStreamRun[T]) (err error) {
 
 func streamRun[T any](ctx JobContext, sr IStreamRun[T]) error {
 	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		ts, err := sr.FindTargets()
 		if err != nil {
 			return err
@@ -120,18 +126,18 @@ func streamRun[T any](ctx JobContext, sr IStreamRun[T]) error {
 		}
 
 		for _, t := range ts {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
+
 			if err = sr.StreamHandle(ctx, t); err != nil {
 				return err
 			}
 
 			if sr.IsCompleted() {
 				return xjm.ErrJobComplete
-			}
-
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			default:
 			}
 		}
 	}
@@ -142,19 +148,19 @@ type ISubmitRun[T any, R any] interface {
 
 	WorkerPool() *gwp.WorkerPool
 	ResultChan() chan R
-	WaitAndProcessResults(func(R) error) error
+	WaitAndProcessResults(JobContext, func(JobContext, R) error) error
 
-	ProcessResult(r R) error
+	ProcessResult(ctx JobContext, r R) error
 	SubmitHandle(ctx JobContext, a T) error
 }
 
 func SubmitRun[T any, R any](sr ISubmitRun[T, R]) error {
-	ctx := sr.Running()
+	ctx := sr.Start()
 	defer ctx.Cancel(nil)
 
 	err := submitRun(ctx, sr)
 	if err == nil || errors.Is(err, xjm.ErrJobComplete) {
-		if er := sr.WaitAndProcessResults(sr.ProcessResult); er != nil {
+		if er := sr.WaitAndProcessResults(ctx, sr.ProcessResult); er != nil {
 			err = er
 		}
 		if err != nil {
@@ -162,7 +168,7 @@ func SubmitRun[T any, R any](sr ISubmitRun[T, R]) error {
 		}
 	} else {
 		ctx.Cancel(err)
-		_ = sr.WaitAndProcessResults(sr.ProcessResult)
+		_ = sr.WaitAndProcessResults(ctx, sr.ProcessResult)
 	}
 
 	return xerrs.ContextCause(ctx, err)
@@ -170,6 +176,12 @@ func SubmitRun[T any, R any](sr ISubmitRun[T, R]) error {
 
 func submitRun[T any, R any](ctx JobContext, sr ISubmitRun[T, R]) error {
 	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		ts, err := sr.FindTargets()
 		if err != nil {
 			return err
@@ -197,7 +209,7 @@ func submitTarget[T any, R any](ctx JobContext, a T, sr ISubmitRun[T, R]) error 
 		case <-ctx.Done():
 			return ctx.Err()
 		case r := <-sr.ResultChan():
-			if err := sr.ProcessResult(r); err != nil {
+			if err := sr.ProcessResult(ctx, r); err != nil {
 				return err
 			}
 		default:
