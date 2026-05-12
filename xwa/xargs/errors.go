@@ -29,22 +29,22 @@ func (pe *ParamError) Error() string {
 	return pe.Param + " [" + pe.Label + "]: " + pe.Message
 }
 
-func InvalidFieldError(c *xin.Context, ns, field string) error {
-	label := tbs.GetText(c.Locale, ns+field, field)
+func InvalidFieldError(locale, namespace, field string) error {
+	label := tbs.GetText(locale, namespace+field, field)
 	fe := &ParamError{
 		Param:   field,
 		Label:   label,
-		Message: tbs.GetText(c.Locale, "error.param.invalid"),
+		Message: tbs.GetText(locale, "error.param.invalid"),
 	}
 	return fe
 }
 
-func InvalidIDError(c *xin.Context) error {
-	return tbs.Error(c.Locale, "error.param.id")
+func InvalidIDError(locale string) error {
+	return tbs.Error(locale, "error.param.id")
 }
 
-func InvalidRequestError(c *xin.Context) error {
-	return tbs.Error(c.Locale, "error.request.invalid")
+func InvalidRequestError(locale string) error {
+	return tbs.Error(locale, "error.request.invalid")
 }
 
 // AddBindErrors translate bind or validate errors and add it to context
@@ -77,8 +77,7 @@ func FormatBindErrors(locale string, err error, ns string) error {
 //  3. error.param.{tag}
 //  4. error.param.invalid
 func TranslateBindErrors(locale string, err error, ns string, tf func(error)) {
-	var fbes *binding.FieldBindErrors
-	if ok := errors.As(err, &fbes); ok {
+	if fbes, ok := binding.AsFieldBindErrors(err); ok {
 		for _, fbe := range *fbes {
 			fk := str.SnakeCase(fbe.Field)
 			fn := tbs.GetText(locale, ns+fk, fk)
@@ -91,8 +90,7 @@ func TranslateBindErrors(locale string, err error, ns string, tf func(error)) {
 		return
 	}
 
-	var ves *vad.ValidationErrors
-	if ok := errors.As(err, &ves); ok {
+	if ves, ok := vad.AsValidationErrors(err); ok {
 		for _, fe := range *ves {
 			fk := str.SnakeCase(fe.Field())
 
