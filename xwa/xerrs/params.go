@@ -1,20 +1,17 @@
-package xargs
+package xerrs
 
 import (
 	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/askasoft/pango/asg"
 	"github.com/askasoft/pango/str"
 	"github.com/askasoft/pango/tbs"
 	"github.com/askasoft/pango/vad"
 	"github.com/askasoft/pango/xin"
 	"github.com/askasoft/pango/xin/binding"
-	"github.com/askasoft/pangox/xwa/xerrs"
 )
-
-var ErrInvalidID = errors.New("invalid id")
-var ErrInvalidUpdates = errors.New("invalid updates")
 
 type ParamError struct {
 	Param   string `json:"param,omitempty"`
@@ -29,12 +26,12 @@ func (pe *ParamError) Error() string {
 	return pe.Param + " [" + pe.Label + "]: " + pe.Message
 }
 
-func InvalidFieldError(locale, namespace, field string) error {
+func InvalidParamError(locale, namespace, field string, errkey ...string) *ParamError {
 	label := tbs.GetText(locale, namespace+field, field)
 	fe := &ParamError{
 		Param:   field,
 		Label:   label,
-		Message: tbs.GetText(locale, "error.param.invalid"),
+		Message: tbs.GetText(locale, asg.First(errkey, "error.param.invalid")),
 	}
 	return fe
 }
@@ -79,13 +76,7 @@ func FormatBindErrors(locale string, err error, ns string) error {
 func TranslateBindErrors(locale string, err error, ns string, tf func(error)) {
 	if fbes, ok := binding.AsFieldBindErrors(err); ok {
 		for _, fbe := range *fbes {
-			fk := str.SnakeCase(fbe.Field)
-			fn := tbs.GetText(locale, ns+fk, fk)
-			fm := tbs.GetText(locale, ns+"error."+fk)
-			if fm == "" {
-				fm = tbs.GetText(locale, "error.param.invalid")
-			}
-			tf(&ParamError{Param: fk, Label: fn, Message: fm})
+			tf(ConvertFieldBindError(locale, ns, fbe.Field))
 		}
 		return
 	}
@@ -94,54 +85,66 @@ func TranslateBindErrors(locale string, err error, ns string, tf func(error)) {
 		for _, fe := range *ves {
 			fk := str.SnakeCase(fe.Field())
 
-			if le, ok := fe.Cause().(xerrs.ILocaleError); ok {
+			if le, ok := fe.Cause().(ILocaleError); ok {
 				fn := tbs.GetText(locale, ns+fk, fk)
 				em := le.LocaleError(locale)
 				tf(&ParamError{Param: fk, Label: fn, Message: em})
 				continue
 			}
 
-			fn := ""
-			fm := tbs.GetText(locale, ns+"error."+fk+"."+fe.Tag())
-			if fm == "" {
-				fm = tbs.GetText(locale, ns+"error."+fk)
-				if fm == "" {
-					fn = tbs.GetText(locale, ns+fk, fk)
-					fm = tbs.GetText(locale, ns+"error.param."+fe.Tag())
-					if fm == "" {
-						fm = tbs.GetText(locale, "error.param."+fe.Tag())
-						if fm == "" {
-							fm = tbs.GetText(locale, "error.param.invalid")
-						}
-					}
-				}
-			}
-
-			em := fm
-			if str.Contains(fm, "%s") {
-				fp := fe.Param()
-				if str.EndsWith(fe.Tag(), "field") {
-					tk := str.SnakeCase(fp)
-					fp = tbs.GetText(locale, ns+tk, tk)
-				}
-				em = fmt.Sprintf(fm, fp)
-			}
-
-			tf(&ParamError{Param: fk, Label: fn, Message: em})
+			tf(ConvertValidationError(locale, ns, fk, fe.Tag(), fe.Param()))
 		}
 		return
 	}
 
-	if errors.Is(err, ErrInvalidID) {
-		tf(tbs.Error(locale, "error.param.id"))
-		return
+	tf(err)
+}
+
+// ConvertFieldBindError convert FieldBindError to ParamError.
+//  1. {xxx}.error.{field}
+//  2. error.param.invalid
+func ConvertFieldBindError(locale string, ns, field string) error {
+	fk := str.SnakeCase(field)
+	fn := tbs.GetText(locale, ns+fk, fk)
+	fm := tbs.GetText(locale, ns+"error."+fk)
+	if fm == "" {
+		fm = tbs.GetText(locale, "error.param.invalid")
 	}
-	if errors.Is(err, ErrInvalidUpdates) {
-		tf(tbs.Error(locale, "error.request.invalid"))
-		return
+	return &ParamError{Param: fk, Label: fn, Message: fm}
+}
+
+// ConvertValidationError convert ValidationError to ParamError.
+//  1. {xxx}.error.{field}.{tag}
+//  2. {xxx}.error.param.{tag}
+//  3. error.param.{tag}
+//  4. error.param.invalid
+func ConvertValidationError(locale string, ns, field, tag, param string) error {
+	fn := ""
+	fm := tbs.GetText(locale, ns+"error."+field+"."+tag)
+	if fm == "" {
+		fm = tbs.GetText(locale, ns+"error."+field)
+		if fm == "" {
+			fn = tbs.GetText(locale, ns+field, field)
+			fm = tbs.GetText(locale, ns+"error.param."+tag)
+			if fm == "" {
+				fm = tbs.GetText(locale, "error.param."+tag)
+				if fm == "" {
+					fm = tbs.GetText(locale, "error.param.invalid")
+				}
+			}
+		}
 	}
 
-	tf(err)
+	em := fm
+	if str.Contains(fm, "%s") {
+		if str.EndsWith(tag, "field") {
+			tk := str.SnakeCase(param)
+			param = tbs.GetText(locale, ns+tk, tk)
+		}
+		em = fmt.Sprintf(fm, param)
+	}
+
+	return &ParamError{Param: field, Label: fn, Message: em}
 }
 
 func E(c *xin.Context) xin.H {

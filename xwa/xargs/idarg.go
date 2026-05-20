@@ -5,6 +5,7 @@ import (
 	"github.com/askasoft/pango/num"
 	"github.com/askasoft/pango/str"
 	"github.com/askasoft/pango/xin"
+	"github.com/askasoft/pangox/xwa/xerrs"
 )
 
 type IDArg struct {
@@ -39,7 +40,7 @@ func (ida *IDArg) Bind(c *xin.Context) error {
 func (ida *IDArg) ParseID() error {
 	ida.ids, ida.all = ida.splitIDs(ida.ID)
 	if !ida.IsValid() {
-		return ErrInvalidID
+		return xerrs.ErrInvalidID
 	}
 	return nil
 }
@@ -95,7 +96,7 @@ func (pka *PKArg) Bind(c *xin.Context) error {
 func (pka *PKArg) ParseID() error {
 	pka.pks, pka.all = pka.splitPKs(pka.ID)
 	if !pka.IsValid() {
-		return ErrInvalidID
+		return xerrs.ErrInvalidID
 	}
 	return nil
 }

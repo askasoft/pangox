@@ -8,6 +8,11 @@ import (
 	"github.com/askasoft/pango/tbs"
 )
 
+var (
+	ErrInvalidID      = NewLocaleError("error.param.id")
+	ErrInvalidRequest = NewLocaleError("error.request.invalid")
+)
+
 func PanicError(r any) error {
 	if err, ok := r.(error); ok {
 		return err
