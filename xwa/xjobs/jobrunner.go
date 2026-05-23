@@ -116,7 +116,7 @@ func (jr *JobRunner) Start() JobContext {
 		chkiv := ini.GetDuration("job", "jobCheckInterval", time.Second)
 		piniv := ini.GetDuration("job", "jobPinInterval", time.Minute)
 
-		if err := jr.JobRunner.Running(ctx, chkiv, piniv); err != nil {
+		if err := jr.Running(ctx, chkiv, piniv); err != nil {
 			cancel(err)
 		}
 	}()
