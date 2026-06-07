@@ -111,6 +111,32 @@ func (fe *SkippedError) Unwrap() error {
 	return fe.Err
 }
 
+type DuplicatedError struct {
+	Err error
+}
+
+func NewDuplicatedError(err error) error {
+	return &DuplicatedError{Err: err}
+}
+
+func AsDuplicatedError(err error) (fe *DuplicatedError, ok bool) {
+	ok = errors.As(err, &fe)
+	return
+}
+
+func IsDuplicatedError(err error) bool {
+	_, ok := AsDuplicatedError(err)
+	return ok
+}
+
+func (de *DuplicatedError) Error() string {
+	return de.Err.Error()
+}
+
+func (de *DuplicatedError) Unwrap() error {
+	return de.Err
+}
+
 type HostnameError struct {
 	hostname string
 }
