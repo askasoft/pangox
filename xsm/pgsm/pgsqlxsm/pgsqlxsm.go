@@ -5,7 +5,6 @@ import (
 
 	"github.com/askasoft/pango/sqx"
 	"github.com/askasoft/pango/sqx/sqlx"
-	"github.com/askasoft/pango/str"
 	"github.com/askasoft/pangox/xsm"
 	"github.com/askasoft/pangox/xsm/pgsm"
 )
@@ -19,7 +18,7 @@ func SM(db *sqlx.DB) xsm.SchemaManager {
 }
 
 func (ssm *ssm) GetSchema(s string) (*xsm.SchemaInfo, error) {
-	if str.ContainsByte(s, '_') {
+	if pgsm.IsSysSM(s) {
 		return nil, nil
 	}
 
@@ -45,7 +44,7 @@ func (ssm *ssm) GetSchema(s string) (*xsm.SchemaInfo, error) {
 }
 
 func (ssm *ssm) ExistsSchema(s string) (bool, error) {
-	if str.ContainsByte(s, '_') {
+	if pgsm.IsSysSM(s) {
 		return false, nil
 	}
 
@@ -67,7 +66,7 @@ func (ssm *ssm) ExistsSchema(s string) (bool, error) {
 func (ssm *ssm) ListSchemas() ([]string, error) {
 	sqb := ssm.db.Builder()
 	sqb.Select("nspname").From("pg_catalog.pg_namespace")
-	sqb.NotLike("nspname", sqx.StringLike("_"))
+	sqb.NotIn("nspname", pgsm.SysSMs)
 	sqb.Order("nspname")
 	sql, args := sqb.Build()
 
@@ -121,7 +120,7 @@ func (ssm *ssm) DeleteSchema(name string) error {
 }
 
 func (ssm *ssm) addQuery(sqb *sqlx.Builder, sq *xsm.SchemaQuery) {
-	sqb.NotLike("nspname", sqx.StringLike("_"))
+	sqb.NotIn("nspname", pgsm.SysSMs)
 	if sq.Name != "" {
 		sqb.ILike("nspname", sqx.StringLike(sq.Name))
 	}

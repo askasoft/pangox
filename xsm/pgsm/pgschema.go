@@ -4,7 +4,19 @@ import (
 	"fmt"
 
 	"github.com/askasoft/pango/sqx"
+	"github.com/askasoft/pango/str"
 )
+
+var SysSMs = []string{"information_schema", "pg_catalog", "pg_toast"}
+
+func IsSysSM(name string) bool {
+	for _, db := range SysSMs {
+		if str.EqualFold(db, name) {
+			return true
+		}
+	}
+	return false
+}
 
 func SQLCreateSchema(name string) string {
 	return "CREATE SCHEMA " + name
