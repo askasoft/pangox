@@ -2,9 +2,10 @@ package xsqls
 
 import (
 	"database/sql"
-	"errors"
+	"fmt"
 	"time"
 
+	"github.com/askasoft/pango/asg"
 	"github.com/askasoft/pango/ini"
 	"github.com/askasoft/pango/log"
 	"github.com/askasoft/pango/log/sqlog/sqlxlog"
@@ -12,37 +13,71 @@ import (
 	"github.com/askasoft/pango/sqx/sqlx"
 )
 
+type dbcfg = map[string]string
+
 var (
-	// SDB database instance
-	SDB *sqlx.DB
-
-	// DBS database settings
-	DBS = map[string]string{}
-
 	// GetErrLogLevels GetErrLogLevel function map
 	GetErrLogLevels = map[string]func(error) log.Level{}
+
+	// sdbs database instances
+	sdbs = map[string]*sqlx.DB{}
+
+	// dbcs database configurations
+	dbcs = map[string]dbcfg{}
 )
-
-func Driver() string {
-	return DBS["driver"]
-}
-
-func Source() string {
-	return DBS["source"]
-}
 
 func RegisterGetErrLogLevel(driver string, f func(error) log.Level) {
 	GetErrLogLevels[driver] = f
 }
 
-func OpenDatabase() error {
-	sec := ini.GetSection("database")
-	if sec == nil {
-		return errors.New("missing [database] settings")
+func SDB(ids ...string) *sqlx.DB {
+	id := asg.First(ids)
+	return sdbs[id]
+}
+
+func Driver(ids ...string) string {
+	return config("driver", ids...)
+}
+
+func Source(name ...string) string {
+	return config("source", name...)
+}
+
+func config(key string, ids ...string) string {
+	id := asg.First(ids)
+	if dbc, ok := dbcs[id]; ok {
+		return dbc[key]
+	}
+	return ""
+}
+
+func OpenDatabase(ids ...string) error {
+	id := asg.First(ids)
+	return openDatabase(id)
+}
+
+func OpenDatabases(ids ...string) error {
+	for _, id := range ids {
+		if err := openDatabase(id); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func openDatabase(id string) error {
+	key := "database"
+	if id != "" {
+		key += "." + id
 	}
 
-	dbs := sec.StringMap()
-	if mag.Equal(DBS, dbs) {
+	sec := ini.GetSection(key)
+	if sec == nil {
+		return fmt.Errorf("missing [%s] settings", key)
+	}
+
+	dbc := sec.StringMap()
+	if mag.Equal(dbc, dbcs[id]) {
 		return nil
 	}
 
@@ -66,8 +101,7 @@ func OpenDatabase() error {
 	)
 	slg.GetErrLogLevel = GetErrLogLevels[driver]
 
-	DBS = dbs
-	SDB = sqlx.NewDB(db, driver, slg.Trace)
-
+	dbcs[id] = dbc
+	sdbs[id] = sqlx.NewDB(db, driver, slg.Trace)
 	return nil
 }
