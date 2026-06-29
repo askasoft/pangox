@@ -67,10 +67,13 @@ func ConfigMiddlewares() {
 	XRC.Disable(!ini.GetBool("server", "httpGzip"))
 	XHD.Disable(!ini.GetBool("server", "httpDump"))
 	XSR.Disable(!ini.GetBool("server", "httpsRedirect"))
-
 	XCC.CacheControl = ini.GetString("server", "staticCacheControl", "public, max-age=31536000, immutable")
+
 	XTP.CookiePath = str.IfEmpty(xwa.Base, "/")
 	XTP.SetSecret(xwa.Secret)
+	XTP.CookieMaxAge = ini.GetDuration("csrf", "cookieMaxAge", time.Hour*24*30)
+	XTP.CookieSecure = ini.GetBool("csrf", "cookieSecure", true)
+	XTP.SetCookieSameSite(ini.GetString("csrf", "cookieSameSite", "strict"))
 
 	ConfigOriginAccessController(XAC)
 	ConfigResponseHeader(XRH)
