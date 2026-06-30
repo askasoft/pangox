@@ -9,6 +9,8 @@ import (
 	"github.com/askasoft/pangox/xsm/pgsm"
 )
 
+var ErrInvalidSchemaName = errors.New("pgsql: invalid schema name")
+
 type ssm struct {
 	db *sqlx.DB
 }
@@ -66,7 +68,7 @@ func (ssm *ssm) ExistsSchema(s string) (bool, error) {
 func (ssm *ssm) ListSchemas() ([]string, error) {
 	sqb := ssm.db.Builder()
 	sqb.Select("nspname").From("pg_catalog.pg_namespace")
-	sqb.NotIn("nspname", pgsm.SysSMs)
+	ssm.filterSysSM(sqb)
 	sqb.Order("nspname")
 	sql, args := sqb.Build()
 
@@ -89,6 +91,10 @@ func (ssm *ssm) ListSchemas() ([]string, error) {
 }
 
 func (ssm *ssm) CreateSchema(name, comment string) error {
+	if pgsm.IsSysSM(name) {
+		return ErrInvalidSchemaName
+	}
+
 	err := ssm.db.Transaction(func(tx *sqlx.Tx) error {
 		if _, err := tx.Exec(pgsm.SQLCreateSchema(name)); err != nil {
 			return err
@@ -110,20 +116,33 @@ func (ssm *ssm) CommentSchema(name string, comment string) error {
 }
 
 func (ssm *ssm) RenameSchema(old string, new string) error {
+	if pgsm.IsSysSM(old) || pgsm.IsSysSM(new) {
+		return ErrInvalidSchemaName
+	}
+
 	_, err := ssm.db.Exec(pgsm.SQLRenameSchema(old, new))
 	return err
 }
 
 func (ssm *ssm) DeleteSchema(name string) error {
+	if pgsm.IsSysSM(name) {
+		return ErrInvalidSchemaName
+	}
+
 	_, err := ssm.db.Exec(pgsm.SQLDeleteSchema(name))
 	return err
 }
 
+func (ssm *ssm) filterSysSM(sqb *sqlx.Builder) {
+	sqb.Neq("nspname", "information_schema")
+	sqb.NotILike("nspname", sqx.StartsLike("pg_"))
+}
+
 func (ssm *ssm) addQuery(sqb *sqlx.Builder, sq *xsm.SchemaQuery) {
-	sqb.NotIn("nspname", pgsm.SysSMs)
 	if sq.Name != "" {
 		sqb.ILike("nspname", sqx.StringLike(sq.Name))
 	}
+	ssm.filterSysSM(sqb)
 }
 
 func (ssm *ssm) CountSchemas(sq *xsm.SchemaQuery) (total int, err error) {

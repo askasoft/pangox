@@ -7,15 +7,8 @@ import (
 	"github.com/askasoft/pango/str"
 )
 
-var SysSMs = []string{"information_schema", "pg_catalog", "pg_toast"}
-
 func IsSysSM(name string) bool {
-	for _, db := range SysSMs {
-		if str.EqualFold(db, name) {
-			return true
-		}
-	}
-	return false
+	return str.EqualFold(name, "information_schema") || str.StartsWithFold(name, "pg_")
 }
 
 func SQLCreateSchema(name string) string {
