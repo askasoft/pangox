@@ -26,7 +26,7 @@ func InitMessages() error {
 			return fmt.Errorf("filepath.Abs('%s'): %w", dir, err)
 		}
 
-		log.Infof("Loading messages from '%s'", absdir)
+		log.Infof("Loading external messages: '%s'", absdir)
 		if err := tb.Load(absdir); err != nil {
 			return err
 		}

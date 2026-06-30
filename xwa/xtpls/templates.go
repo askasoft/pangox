@@ -56,7 +56,7 @@ func InitTemplates() error {
 			return fmt.Errorf("filepath.Abs('%s'): %w", dir, err)
 		}
 
-		log.Infof("Loading templates from '%s'", absdir)
+		log.Infof("Loading external templates: '%s'", absdir)
 		if err := ht.Load(absdir); err != nil {
 			return err
 		}
