@@ -30,30 +30,27 @@ func RegisterGetErrLogLevel(driver string, f func(error) log.Level) {
 	GetErrLogLevels[driver] = f
 }
 
-func SDB(ids ...string) *sqlx.DB {
-	id := asg.First(ids)
-	return sdbs[id]
+func SDB(id ...string) *sqlx.DB {
+	return sdbs[asg.First(id)]
 }
 
-func Driver(ids ...string) string {
-	return config("driver", ids...)
+func Driver(id ...string) string {
+	return config("driver", id...)
 }
 
-func Source(name ...string) string {
-	return config("source", name...)
+func Source(id ...string) string {
+	return config("source", id...)
 }
 
-func config(key string, ids ...string) string {
-	id := asg.First(ids)
-	if dbc, ok := dbcs[id]; ok {
+func config(key string, id ...string) string {
+	if dbc, ok := dbcs[asg.First(id)]; ok {
 		return dbc[key]
 	}
 	return ""
 }
 
-func OpenDatabase(ids ...string) error {
-	id := asg.First(ids)
-	return openDatabase(id)
+func OpenDatabase(id ...string) error {
+	return openDatabase(asg.First(id))
 }
 
 func OpenDatabases(ids ...string) error {

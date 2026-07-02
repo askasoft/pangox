@@ -16,9 +16,14 @@ import (
 	"github.com/askasoft/pangox/xwa/xcert"
 )
 
-var (
-	// semaphore channel to limit connections
-	semaphore chan struct{}
+var servers = map[string]*Server{}
+
+type Server struct {
+	// ID config id
+	ID string
+
+	// Semaphore channel to limit connections
+	Semaphore chan struct{}
 
 	// TLLs limited listeners
 	TLLs []*netx.LimitedListener
@@ -31,11 +36,21 @@ var (
 
 	// HTTP http servers
 	HSVs []*http.Server
-)
+}
 
-// InitServers initialize TCP listeners and HTTP servers
-func InitServers(hh http.Handler) error {
-	listen := ini.GetString("server", "listen")
+func (s *Server) key() string {
+	key := "server"
+	if s.ID != "" {
+		key += "." + s.ID
+	}
+	return key
+}
+
+func (s *Server) Init(hh http.Handler) error {
+	sec := ini.GetSection(s.key())
+
+	listen := sec.GetString("listen")
+	dumpdir := sec.GetString("tcpDumpDir", "logs")
 
 	for _, addr := range str.Fields(listen) {
 		log.Infof("Listening %s ...", addr)
@@ -51,7 +66,7 @@ func InitServers(hh http.Handler) error {
 		}
 
 		tll := netx.NewLimitedListener(tcp, 0)
-		tdl := netx.NewDumpListener(tll, "logs")
+		tdl := netx.NewDumpListener(tll, dumpdir)
 
 		hsv := &http.Server{
 			Addr:    addr,
@@ -62,67 +77,54 @@ func InitServers(hh http.Handler) error {
 			hsv.TLSConfig = xcert.TLSConfig
 		}
 
-		TCPs = append(TCPs, tcp)
-		TLLs = append(TLLs, tll)
-		TDLs = append(TDLs, tdl)
-		HSVs = append(HSVs, hsv)
+		s.TCPs = append(s.TCPs, tcp)
+		s.TLLs = append(s.TLLs, tll)
+		s.TDLs = append(s.TDLs, tdl)
+		s.HSVs = append(s.HSVs, hsv)
 	}
 
-	ConfigServers()
+	s.Config()
+
 	return nil
 }
 
-// ConfigServers config http servers
-func ConfigServers() {
-	maxcon := max(ini.GetInt("server", "maxConnections"), 0)
+// Config config http server
+func (s *Server) Config() {
+	sec := ini.GetSection(s.key())
 
-	if cap(semaphore) != maxcon {
-		semaphore = make(chan struct{}, maxcon)
-		for _, ttl := range TLLs {
-			ttl.Semaphore = semaphore
+	maxcon := max(sec.GetInt("maxConnections"), 0)
+
+	if cap(s.Semaphore) != maxcon {
+		s.Semaphore = make(chan struct{}, maxcon)
+		for _, ttl := range s.TLLs {
+			ttl.Semaphore = s.Semaphore
 		}
 	}
 
-	for _, tdl := range TDLs {
-		tdl.Disable(!ini.GetBool("server", "tcpDump"))
+	for _, tdl := range s.TDLs {
+		tdl.Disable(!sec.GetBool("tcpDump"))
+		tdl.Path = sec.GetString("tcpDumpDir", "logs")
 	}
 
-	for _, hsv := range HSVs {
-		hsv.ReadHeaderTimeout = ini.GetDuration("server", "httpReadHeaderTimeout", 10*time.Second)
-		hsv.ReadTimeout = ini.GetDuration("server", "httpReadTimeout", 120*time.Second)
-		hsv.WriteTimeout = ini.GetDuration("server", "httpWriteTimeout", 300*time.Second)
-		hsv.IdleTimeout = ini.GetDuration("server", "httpIdleTimeout", 30*time.Second)
+	for _, hsv := range s.HSVs {
+		hsv.ReadHeaderTimeout = sec.GetDuration("httpReadHeaderTimeout", 10*time.Second)
+		hsv.ReadTimeout = sec.GetDuration("httpReadTimeout", 120*time.Second)
+		hsv.WriteTimeout = sec.GetDuration("httpWriteTimeout", 300*time.Second)
+		hsv.IdleTimeout = sec.GetDuration("httpIdleTimeout", 30*time.Second)
 	}
 }
 
-// ReloadServers reload server configurations
-func ReloadServers() error {
-	ConfigServers()
-	return nil
-}
-
-// Serves start serve http servers in go-routines (non-blocking)
-func Serves() {
-	for i, hsv := range HSVs {
-		go serve(hsv, TDLs[i])
+// Serve start serve http servers in go-routines (non-blocking)
+func (s *Server) Serve() {
+	for i, hsv := range s.HSVs {
+		go s.serve(hsv, s.TDLs[i])
 
 		// sleep some time to keep log order
 		time.Sleep(10 * time.Millisecond)
 	}
 }
 
-// Shutdowns gracefully shutdown the http servers with timeout '[server] shutdownTimeout' (default 15 seconds).
-func Shutdowns() {
-	// shutdown http servers
-	var wg sync.WaitGroup
-	for _, hsv := range HSVs {
-		wg.Add(1)
-		go shutdown(hsv, &wg)
-	}
-	wg.Wait()
-}
-
-func serve(hsv *http.Server, tcp net.Listener) {
+func (s *Server) serve(hsv *http.Server, tcp net.Listener) {
 	if hsv.TLSConfig != nil {
 		tcp = tls.NewListener(tcp, hsv.TLSConfig)
 		log.Infof("HTTPs Serving %s ...", hsv.Addr)
@@ -139,7 +141,16 @@ func serve(hsv *http.Server, tcp net.Listener) {
 	}
 }
 
-func shutdown(hsv *http.Server, wg *sync.WaitGroup) {
+// Shutdown gracefully shutdown the http servers with timeout '[server] shutdownTimeout' (default 15 seconds).
+func (s *Server) Shutdown(wg *sync.WaitGroup) {
+	// shutdown http servers
+	for _, hsv := range s.HSVs {
+		wg.Add(1)
+		go s.shutdown(hsv, wg)
+	}
+}
+
+func (s *Server) shutdown(hsv *http.Server, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	// The context is used to inform the server it has some seconds to finish
@@ -153,4 +164,50 @@ func shutdown(hsv *http.Server, wg *sync.WaitGroup) {
 	if err := hsv.Shutdown(ctx); err != nil {
 		log.Errorf("HTTP Server %s failed to shutdown: %v", hsv.Addr, err)
 	}
+}
+
+// InitServers initialize TCP listener and HTTP server
+func InitServers(hh http.Handler, ids ...string) error {
+	if len(ids) == 0 {
+		ids = []string{""}
+	}
+	return initServers(hh, ids...)
+}
+
+// initServers initialize TCP listeners and HTTP servers
+func initServers(hh http.Handler, ids ...string) error {
+	for _, id := range ids {
+		srv := &Server{ID: id}
+		if err := srv.Init(hh); err != nil {
+			return err
+		}
+		servers[id] = srv
+	}
+	return nil
+}
+
+// ReloadServers reload server configurations
+func ReloadServers() error {
+	for _, s := range servers {
+		s.Config()
+	}
+	return nil
+}
+
+// Serves start serve http servers in go-routines (non-blocking)
+func Serves() {
+	for _, s := range servers {
+		s.Serve()
+	}
+}
+
+// Shutdowns gracefully shutdown the http servers with timeout '[server] shutdownTimeout' (default 15 seconds).
+func Shutdowns() {
+	var wg sync.WaitGroup
+
+	for _, s := range servers {
+		s.Shutdown(&wg)
+	}
+
+	wg.Wait()
 }
