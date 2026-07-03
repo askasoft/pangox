@@ -17,72 +17,11 @@ var (
 )
 
 func InitMessages() error {
-	dir := ini.GetString("app", "messages")
-
-	tb := tbs.NewTextBundles()
-	if dir != "" {
-		absdir, err := filepath.Abs(dir)
-		if err != nil {
-			return fmt.Errorf("filepath.Abs('%s'): %w", dir, err)
-		}
-
-		log.Infof("Loading external messages: '%s'", absdir)
-		if err := tb.Load(absdir); err != nil {
-			return err
-		}
-	} else if len(FSs) > 0 {
-		log.Info("Loading embedded messages")
-		for _, fs := range FSs {
-			if err := tb.LoadFS(fs, "."); err != nil {
-				return err
-			}
-		}
-	}
-
-	Dir = dir
-	tbs.SetDefault(tb)
-	return nil
+	return loadMessages("Loading")
 }
 
 func ReloadMessages() error {
-	dir := ini.GetString("app", "messages")
-
-	if dir != "" {
-		absdir, err := filepath.Abs(dir)
-		if err != nil {
-			return err
-		}
-
-		log.Infof("Reloading messages from '%s'", absdir)
-
-		tb := tbs.NewTextBundles()
-		if err := tb.Load(absdir); err != nil {
-			return err
-		}
-
-		Dir = dir
-		tbs.SetDefault(tb)
-		return nil
-	}
-
-	// internal embedded file system
-	// [dir != Dir] means switch from local to embedded
-	if dir != Dir && len(FSs) > 0 {
-		log.Info("Reloading embedded messages")
-
-		tb := tbs.NewTextBundles()
-		for _, fs := range FSs {
-			if err := tb.LoadFS(fs, "."); err != nil {
-				return err
-			}
-		}
-
-		Dir = dir
-		tbs.SetDefault(tb)
-		return nil
-	}
-
-	return nil
+	return loadMessages("Reloading")
 }
 
 func ReloadMessagesOnChange(path string, op string) error {
@@ -103,19 +42,34 @@ func ReloadMessagesOnChange(path string, op string) error {
 		return nil
 	}
 
-	absdir, err := filepath.Abs(dir)
-	if err != nil {
-		return err
-	}
+	log.Infof("Reloading messages on [%s] '%s'", op, path)
+	return ReloadMessages()
+}
 
-	// reload on message file change
-	log.Infof("Reloading messages from '%s' on [%s] '%s'", absdir, op, path)
-
+func loadMessages(action string) error {
 	tb := tbs.NewTextBundles()
-	if err := tb.Load(absdir); err != nil {
-		return err
+	if len(FSs) > 0 {
+		log.Infof("%s embedded messages", action)
+		if err := tb.LoadFS(FSs...); err != nil {
+			return err
+		}
 	}
 
+	dir := ini.GetString("app", "messages")
+
+	if dir != "" {
+		absdir, err := filepath.Abs(dir)
+		if err != nil {
+			return fmt.Errorf("filepath.Abs('%s'): %w", dir, err)
+		}
+
+		log.Infof("%s external messages: '%s'", action, absdir)
+		if err := tb.Load(absdir); err != nil {
+			return err
+		}
+	}
+
+	Dir = dir
 	tbs.SetDefault(tb)
 	return nil
 }
