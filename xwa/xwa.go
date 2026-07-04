@@ -171,8 +171,8 @@ func InitConfigs() error {
 	ini.SetDefault(cfg)
 
 	CFG = ini.StringMap()
-	Base = ini.GetString("server", "prefix")
-	Domain = ini.GetString("server", "domain")
+	Base = ini.GetString("router", "prefix")
+	Domain = ini.GetString("app", "domain")
 	Secret = ini.GetString("app", "secret", "~ pangoxsecret ~")
 	Locales = str.FieldsAny(ini.GetString("app", "locales"), ",; ")
 

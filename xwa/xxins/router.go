@@ -36,13 +36,15 @@ func ConfigRouter() {
 }
 
 func ConfigRouters(ids ...string) {
+	sec := ini.GetSection("router")
+
 	for _, id := range ids {
 		r := xins[id]
 		if r == nil {
 			panic(fmt.Errorf("xxins: invalid router '%s'", id))
 		}
 
-		trustedProxies := str.Fields(ini.GetString("server", "httpTrustedProxies"))
+		trustedProxies := str.Fields(sec.GetString("httpTrustedProxies"))
 		switch len(trustedProxies) {
 		case 0:
 			trustedProxies = xin.DefaultTrustedProxies
@@ -58,12 +60,12 @@ func ConfigRouters(ids ...string) {
 			log.Errorf("invalid setting [server] httpTrustedProxies = %s", str.Join(trustedProxies, " "))
 		}
 
-		r.TrustedIPHeader = ini.GetString("server", "httpTrustedIPHeader")
+		r.TrustedIPHeader = sec.GetString("httpTrustedIPHeader")
 
-		remoteIPHeaders := str.Fields(ini.GetString("server", "httpRemoteIPHeaders"))
+		remoteIPHeaders := str.Fields(sec.GetString("httpRemoteIPHeaders"))
 		r.RemoteIPHeaders = gog.If(len(remoteIPHeaders) > 0, remoteIPHeaders, xin.DefaultRemoteIPHeaders)
 
-		sslProxyHeaders := str.Fields(ini.GetString("server", "httpSSLProxyHeaders"))
+		sslProxyHeaders := str.Fields(sec.GetString("httpSSLProxyHeaders"))
 		if len(sslProxyHeaders) == 0 {
 			r.SSLProxyHeaders = xin.DefaultSSLProxyHeaders
 		} else {

@@ -61,13 +61,13 @@ func InitMiddlewares() {
 
 func ConfigMiddlewares() {
 	XLL.Locales = xwa.Locales
-	XSL.DrainBody = ini.GetBool("server", "httpDrainRequestBody", false)
-	XSL.MaxBodySize = ini.GetSize("server", "httpMaxRequestBodySize", 8<<20)
+	XSL.DrainBody = ini.GetBool("router", "httpDrainRequestBody", false)
+	XSL.MaxBodySize = ini.GetSize("router", "httpMaxRequestBodySize", 8<<20)
 
-	XRC.Disable(!ini.GetBool("server", "httpGzip"))
-	XHD.Disable(!ini.GetBool("server", "httpDump"))
-	XSR.Disable(!ini.GetBool("server", "httpsRedirect"))
-	XCC.CacheControl = ini.GetString("server", "staticCacheControl", "public, max-age=31536000, immutable")
+	XRC.Disable(!ini.GetBool("router", "httpGzip"))
+	XHD.Disable(!ini.GetBool("router", "httpDump"))
+	XSR.Disable(!ini.GetBool("router", "httpsRedirect"))
+	XCC.CacheControl = ini.GetString("router", "staticCacheControl", "public, max-age=31536000, immutable")
 
 	XTP.CookiePath = str.IfEmpty(xwa.Base, "/")
 	XTP.SetSecret(xwa.Secret)
@@ -81,17 +81,17 @@ func ConfigMiddlewares() {
 }
 
 func ConfigOriginAccessController(xac *middleware.OriginAccessController) {
-	xac.SetAllowOrigins(str.Fields(ini.GetString("server", "accessControlAllowOrigin"))...)
-	xac.SetAllowCredentials(ini.GetBool("server", "accessControlAllowCredentials"))
-	xac.SetAllowHeaders(ini.GetString("server", "accessControlAllowHeaders"))
-	xac.SetAllowMethods(ini.GetString("server", "accessControlAllowMethods"))
-	xac.SetExposeHeaders(ini.GetString("server", "accessControlExposeHeaders"))
-	xac.SetMaxAge(ini.GetInt("server", "accessControlMaxAge"))
+	xac.SetAllowOrigins(str.Fields(ini.GetString("router", "accessControlAllowOrigin"))...)
+	xac.SetAllowCredentials(ini.GetBool("router", "accessControlAllowCredentials"))
+	xac.SetAllowHeaders(ini.GetString("router", "accessControlAllowHeaders"))
+	xac.SetAllowMethods(ini.GetString("router", "accessControlAllowMethods"))
+	xac.SetExposeHeaders(ini.GetString("router", "accessControlExposeHeaders"))
+	xac.SetMaxAge(ini.GetInt("router", "accessControlMaxAge"))
 }
 
 func ConfigResponseHeader(xrh *middleware.ResponseHeader) {
 	hm := map[string]string{}
-	hh := ini.GetString("server", "httpResponseHeader")
+	hh := ini.GetString("router", "httpResponseHeader")
 	if hh == "" {
 		xrh.Header = hm
 	} else {
@@ -114,19 +114,19 @@ func ConfigResponseHeader(xrh *middleware.ResponseHeader) {
 
 func ConfigAccessLogger(xal *middleware.AccessLogger) {
 	alws := []middleware.AccessLogWriter{}
-	alfs := str.Fields(ini.GetString("server", "accessLog"))
+	alfs := str.Fields(ini.GetString("router", "accessLog"))
 	for _, alf := range alfs {
 		switch alf {
 		case "text":
 			alw := middleware.NewAccessLogWriter(
 				log.GetOutputer("XAT", log.LevelTrace),
-				ini.GetString("server", "accessLogTextFormat", middleware.AccessLogTextFormat),
+				ini.GetString("router", "accessLogTextFormat", middleware.AccessLogTextFormat),
 			)
 			alws = append(alws, alw)
 		case "json":
 			alw := middleware.NewAccessLogWriter(
 				log.GetOutputer("XAJ", log.LevelTrace),
-				ini.GetString("server", "accessLogJSONFormat", middleware.AccessLogJSONFormat),
+				ini.GetString("router", "accessLogJSONFormat", middleware.AccessLogJSONFormat),
 			)
 			alws = append(alws, alw)
 		default:
