@@ -5,11 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/askasoft/pango/log"
 	"github.com/askasoft/pango/sqx"
 	"github.com/askasoft/pango/sqx/sqlx"
 	"github.com/askasoft/pango/str"
+	"github.com/askasoft/pango/tmu"
 )
 
 func getLogger(loggers ...log.Logger) log.Logger {
@@ -37,6 +39,8 @@ func ExecSQL(db *sqlx.DB, schema, sqls string, loggers ...log.Logger) error {
 			}
 
 			if str.StartsWithFold(sqs, "SELECT") {
+				st := time.Now()
+
 				rows, err := tx.Query(sqs)
 				if err != nil {
 					return err
@@ -88,14 +92,12 @@ func ExecSQL(db *sqlx.DB, schema, sqls string, loggers ...log.Logger) error {
 					sb.WriteByte('\n')
 				}
 
-				logger.Infof("#%d [%d] = %s\n%s", i, cnt, sqs, sb.String())
+				logger.Infof("[%d: %s] %s\n%s", cnt, tmu.HumanDuration(time.Since(st)), sqs, sb.String())
 			} else {
-				cnt, err := tx.Update(sqs)
+				_, err := tx.Update(sqs)
 				if err != nil {
 					return err
 				}
-
-				logger.Infof("#%d [%d] = %s", i, cnt, sqs)
 			}
 		}
 	})

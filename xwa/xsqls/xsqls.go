@@ -13,17 +13,18 @@ import (
 	"github.com/askasoft/pango/sqx/sqlx"
 )
 
-type dbcfg = map[string]string
+type dbsrc struct {
+	sdb *sqlx.DB
+	dbc map[string]string
+	slg *sqlxlog.SqlxLogger
+}
 
 var (
 	// GetErrLogLevels GetErrLogLevel function map
 	GetErrLogLevels = map[string]func(error) log.Level{}
 
-	// sdbs database instances
-	sdbs = map[string]*sqlx.DB{}
-
-	// dbcs database configurations
-	dbcs = map[string]dbcfg{}
+	// database sources
+	sources = map[string]*dbsrc{}
 )
 
 func RegisterGetErrLogLevel(driver string, f func(error) log.Level) {
@@ -31,7 +32,10 @@ func RegisterGetErrLogLevel(driver string, f func(error) log.Level) {
 }
 
 func SDB(id ...string) *sqlx.DB {
-	return sdbs[asg.First(id)]
+	if src, ok := sources[asg.First(id)]; ok {
+		return src.sdb
+	}
+	return nil
 }
 
 func Driver(id ...string) string {
@@ -42,9 +46,18 @@ func Source(id ...string) string {
 	return config("source", id...)
 }
 
+func Logger(id ...string) *sqlxlog.SqlxLogger {
+	if src, ok := sources[asg.First(id)]; ok {
+		return src.slg
+	}
+	return nil
+}
+
 func config(key string, id ...string) string {
-	if dbc, ok := dbcs[asg.First(id)]; ok {
-		return dbc[key]
+	if src, ok := sources[asg.First(id)]; ok {
+		if val, ok := src.dbc[key]; ok {
+			return val
+		}
 	}
 	return ""
 }
@@ -74,8 +87,10 @@ func openDatabase(id string) error {
 	}
 
 	dbc := sec.StringMap()
-	if mag.Equal(dbc, dbcs[id]) {
-		return nil
+	if src, ok := sources[id]; ok {
+		if mag.Equal(dbc, src.dbc) {
+			return nil
+		}
 	}
 
 	driver := sec.GetString("driver")
@@ -98,7 +113,10 @@ func openDatabase(id string) error {
 	)
 	slg.GetErrLogLevel = GetErrLogLevels[driver]
 
-	dbcs[id] = dbc
-	sdbs[id] = sqlx.NewDB(db, driver, slg.Trace)
+	sources[id] = &dbsrc{
+		sdb: sqlx.NewDB(db, driver, slg.Trace),
+		dbc: dbc,
+		slg: slg,
+	}
 	return nil
 }
