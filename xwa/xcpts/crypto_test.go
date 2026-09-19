@@ -39,13 +39,13 @@ func TestHash(t *testing.T) {
 	}
 }
 
-func TestEncryptDecrypt(t *testing.T) {
+func TestEncryptDecryptString(t *testing.T) {
 	username := "x@x.com"
 	password := "trusttrusttrusttrust"
 
-	encpass := MustEncrypt(username, password)
+	encpass := MustEncryptString(username, "pwd", password)
 
-	decpass := MustDecrypt(username, encpass)
+	decpass := MustDecryptString(username, "pwd", encpass)
 	if password != decpass {
 		t.Errorf("%s: E(%s) != D(%s)", password, encpass, decpass)
 	}
