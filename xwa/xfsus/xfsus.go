@@ -31,7 +31,7 @@ func CleanOutdatedLocalFiles(dir string, before time.Time, loggers ...log.Logger
 
 	des, err := f.ReadDir(-1)
 	if err != nil {
-		logger.Error("ReadDir('%s') failed: %v", dir, err)
+		logger.Errorf("ReadDir('%s') failed: %v", dir, err)
 		return
 	}
 
