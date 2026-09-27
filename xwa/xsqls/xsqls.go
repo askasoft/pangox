@@ -11,6 +11,7 @@ import (
 	"github.com/askasoft/pango/log/sqlog/sqlxlog"
 	"github.com/askasoft/pango/mag"
 	"github.com/askasoft/pango/sqx/sqlx"
+	"github.com/askasoft/pango/str"
 )
 
 type dbsrc struct {
@@ -19,16 +20,50 @@ type dbsrc struct {
 	slg *sqlxlog.SqlxLogger
 }
 
+const (
+	AnyDriver = "*"
+)
+
 var (
 	// GetErrLogLevels GetErrLogLevel function map
 	GetErrLogLevels = map[string]func(error) log.Level{}
+
+	// GetSQLLogLevels GetSQLLogLevel function map
+	GetSQLLogLevels = map[string]func(string) log.Level{}
+
+	// IsSlowSQLs IsSlowSQL function map
+	IsSlowSQLs = map[string]func(string, time.Duration) bool{}
 
 	// database sources
 	sources = map[string]*dbsrc{}
 )
 
+func init() {
+	RegisterIsSlowSQL(AnyDriver, defaultSlowSQLLog)
+}
+
 func RegisterGetErrLogLevel(driver string, f func(error) log.Level) {
 	GetErrLogLevels[driver] = f
+}
+
+func RegisterGetSQLLogLevel(driver string, f func(string) log.Level) {
+	GetSQLLogLevels[driver] = f
+}
+
+func RegisterIsSlowSQL(driver string, f func(string, time.Duration) bool) {
+	IsSlowSQLs[driver] = f
+}
+
+func getRegisteredFunction[T any](m map[string]T, k string) T {
+	if v, ok := m[k]; ok {
+		return v
+	}
+	return m[AnyDriver]
+}
+
+func defaultSlowSQLLog(sql string, _ time.Duration) bool {
+	sql = str.StripLeft(sql)
+	return !str.StartsWithFold(sql, "ALTER") && !str.StartsWithFold(sql, "VACUUM")
 }
 
 func SDB(id ...string) *sqlx.DB {
@@ -107,11 +142,11 @@ func openDatabase(id string) error {
 	db.SetMaxOpenConns(sec.GetInt("maxOpenConns", 10))
 	db.SetConnMaxLifetime(sec.GetDuration("connMaxLifetime", 10*time.Minute))
 
-	slg := sqlxlog.NewSqlxLogger(
-		log.GetLogger("SQL"),
-		sec.GetDuration("slowSQL", 2*time.Second),
-	)
-	slg.GetErrLogLevel = GetErrLogLevels[driver]
+	slg := sqlxlog.NewSqlxLogger(log.GetLogger("SQL"))
+	slg.SlowSQLTime = sec.GetDuration("slowSQL", 2*time.Second)
+	slg.GetErrLogLevel = getRegisteredFunction(GetErrLogLevels, driver)
+	slg.GetSQLLogLevel = getRegisteredFunction(GetSQLLogLevels, driver)
+	slg.IsSlowSQL = getRegisteredFunction(IsSlowSQLs, driver)
 
 	sources[id] = &dbsrc{
 		sdb: sqlx.NewDB(db, driver, slg.Trace),
