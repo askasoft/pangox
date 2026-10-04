@@ -26,6 +26,10 @@ func (ida *IDArg) IDs() []int64 {
 	return ida.ids
 }
 
+func (ida *IDArg) All() bool {
+	return ida.all
+}
+
 func (ida *IDArg) IsValid() bool {
 	return len(ida.ids) > 0 || ida.all
 }
@@ -80,6 +84,10 @@ func (pka *PKArg) String() string {
 
 func (pka *PKArg) PKs() []string {
 	return pka.pks
+}
+
+func (pka *PKArg) All() bool {
+	return pka.all
 }
 
 func (pka *PKArg) IsValid() bool {
