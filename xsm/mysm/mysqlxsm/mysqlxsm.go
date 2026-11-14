@@ -91,6 +91,10 @@ func (ssm *ssm) ListSchemas() ([]string, error) {
 }
 
 func (ssm *ssm) CreateSchema(name, comment string) error {
+	if mysm.IsSysDB(name) {
+		return mysm.ErrInvalidSchemaName
+	}
+
 	err := ssm.db.Transaction(func(tx *sqlx.Tx) error {
 		if _, err := tx.Exec(mysm.SQLCreateSchema(name)); err != nil {
 			return err
@@ -116,6 +120,10 @@ func (ssm *ssm) RenameSchema(old string, new string) error {
 }
 
 func (ssm *ssm) DeleteSchema(name string) error {
+	if mysm.IsSysDB(name) {
+		return mysm.ErrInvalidSchemaName
+	}
+
 	_, err := ssm.db.Exec(mysm.SQLDeleteSchema(name))
 	return err
 }

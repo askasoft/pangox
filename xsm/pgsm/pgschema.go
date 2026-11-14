@@ -1,11 +1,14 @@
 package pgsm
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/askasoft/pango/sqx"
 	"github.com/askasoft/pango/str"
 )
+
+var ErrInvalidSchemaName = errors.New("pgsql: invalid schema name")
 
 func IsSysSM(name string) bool {
 	return str.EqualFold(name, "information_schema") || str.StartsWithFold(name, "pg_")

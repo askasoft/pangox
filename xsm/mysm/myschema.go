@@ -1,11 +1,14 @@
 package mysm
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/askasoft/pango/sqx"
 	"github.com/askasoft/pango/str"
 )
+
+var ErrInvalidSchemaName = errors.New("mysql: invalid schema name")
 
 var SysDBs = []string{"information_schema", "mysql", "performance_schema", "sys"}
 

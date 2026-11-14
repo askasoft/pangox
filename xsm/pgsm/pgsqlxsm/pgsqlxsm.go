@@ -9,8 +9,6 @@ import (
 	"github.com/askasoft/pangox/xsm/pgsm"
 )
 
-var ErrInvalidSchemaName = errors.New("pgsql: invalid schema name")
-
 type ssm struct {
 	db *sqlx.DB
 }
@@ -92,7 +90,7 @@ func (ssm *ssm) ListSchemas() ([]string, error) {
 
 func (ssm *ssm) CreateSchema(name, comment string) error {
 	if pgsm.IsSysSM(name) {
-		return ErrInvalidSchemaName
+		return pgsm.ErrInvalidSchemaName
 	}
 
 	err := ssm.db.Transaction(func(tx *sqlx.Tx) error {
@@ -117,7 +115,7 @@ func (ssm *ssm) CommentSchema(name string, comment string) error {
 
 func (ssm *ssm) RenameSchema(old string, new string) error {
 	if pgsm.IsSysSM(old) || pgsm.IsSysSM(new) {
-		return ErrInvalidSchemaName
+		return pgsm.ErrInvalidSchemaName
 	}
 
 	_, err := ssm.db.Exec(pgsm.SQLRenameSchema(old, new))
@@ -126,7 +124,7 @@ func (ssm *ssm) RenameSchema(old string, new string) error {
 
 func (ssm *ssm) DeleteSchema(name string) error {
 	if pgsm.IsSysSM(name) {
-		return ErrInvalidSchemaName
+		return pgsm.ErrInvalidSchemaName
 	}
 
 	_, err := ssm.db.Exec(pgsm.SQLDeleteSchema(name))
