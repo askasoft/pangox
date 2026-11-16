@@ -66,6 +66,7 @@ func ConfigMiddlewares() {
 
 	XRC.Disable(!ini.GetBool("router", "httpGzip"))
 	XHD.Disable(!ini.GetBool("router", "httpDump"))
+	XHD.RedactSensetiveHeader(ini.GetString("router", "httpDump") != "TRUE")
 	XSR.Disable(!ini.GetBool("router", "httpsRedirect"))
 	XCC.CacheControl = ini.GetString("router", "staticCacheControl", "public, max-age=31536000, immutable")
 
