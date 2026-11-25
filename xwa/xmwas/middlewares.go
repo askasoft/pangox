@@ -73,8 +73,8 @@ func ConfigMiddlewares() {
 	XTP.CookiePath = str.IfEmpty(xwa.Base, "/")
 	XTP.SetSecret(xwa.Secret)
 	XTP.CookieMaxAge = ini.GetDuration("csrf", "cookieMaxAge", time.Hour*24*30)
-	XTP.CookieSecure = ini.GetBool("csrf", "cookieSecure", true)
-	XTP.SetCookieSameSite(ini.GetString("csrf", "cookieSameSite", "strict"))
+	XTP.CookieSecure = ini.GetBool("csrf", "cookieSecure")
+	XTP.SetCookieSameSite(ini.GetString("csrf", "cookieSameSite", "lax"))
 
 	ConfigOriginAccessController(XAC)
 	ConfigResponseHeader(XRH)
